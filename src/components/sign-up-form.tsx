@@ -77,12 +77,13 @@ export function SignUpForm({
         router.push("/auth/sign-in");
       }
     } catch (error: unknown) {
+      console.error("Sign up error:", error);
       if (error instanceof ApiError) {
         toast.error(
           (error.body.message as string) || "Failed to create account",
         );
       } else {
-        toast.error("Failed to create account");
+        toast.error("Network error or server timeout. Please try again.");
       }
     } finally {
       setIsPending(false);
