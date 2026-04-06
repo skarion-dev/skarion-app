@@ -11,34 +11,48 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) return null;
-
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(credentials),
-          },
-        );
-
-        const data = await res.json();
-        if (!data?.id) {
-          console.error("Login failed:", data);
+        console.log("[Auth] authorize callback triggered for email:", credentials?.email);
+        if (!credentials?.email || !credentials.password) {
+          console.log("[Auth] Missing credentials");
           return null;
         }
 
-        return {
-          id: String(data.id),
-          name: data.name,
-          email: data.email,
-          role: data.role,
-          roles: data.roles ?? [],
-          permissions: data.permissions ?? [],
-          image: data.image,
-          lastLogin: data.lastLogin,
-          accessToken: data.accessToken,
-        };
+        console.log("[Auth] Fetching from:", `${process.env.NEXT_PUBLIC_API_URL}/auth/login`);
+        try {
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(credentials),
+            },
+          );
+
+          console.log("[Auth] Fetch response status:", res.status);
+          const data = await res.json();
+          console.log("[Auth] Fetch response parsed successfully.");
+          
+          if (!data?.id) {
+            console.error("[Auth] Login failed due to missing user ID:", data);
+            return null;
+          }
+
+          console.log("[Auth] Login successful, returning user object.");
+          return {
+            id: String(data.id),
+            name: data.name,
+            email: data.email,
+            role: data.role,
+            roles: data.roles ?? [],
+            permissions: data.permissions ?? [],
+            image: data.image,
+            lastLogin: data.lastLogin,
+            accessToken: data.accessToken,
+          };
+        } catch (err) {
+          console.error("[Auth] Exception during fetch in authorize callback:", err);
+          throw err;
+        }
       },
     }),
     Google({

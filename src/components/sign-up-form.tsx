@@ -52,9 +52,11 @@ export function SignUpForm({
   });
 
   const onSubmit = async (data: SignUpFormData) => {
+    console.log("[SignUpForm] Starting signup for email:", data.email);
     setIsPending(true);
 
     try {
+      console.log("[SignUpForm] Calling AuthService.authControllerSignup...");
       const resp = await AuthService.authControllerSignup({
         name: data.name,
         username: data.username,
@@ -62,23 +64,29 @@ export function SignUpForm({
         password: data.password,
         confirmPassword: data.confirmPassword,
       });
+      console.log("[SignUpForm] authControllerSignup returned:", resp);
 
       toast.success("Account created successfully!");
 
+      console.log("[SignUpForm] Attempting implicit sign in with next-auth...");
       const res = await signIn("credentials", {
         redirect: false,
         email: data.email,
         password: data.password,
       });
+      console.log("[SignUpForm] Implicit signIn returned:", res);
 
       if (res?.ok) {
+        console.log("[SignUpForm] Implicit sign in OK. Redirecting to /");
         router.push("/");
       } else {
+        console.log("[SignUpForm] Implicit sign in failed/redirected. Redirecting to /auth/sign-in");
         router.push("/auth/sign-in");
       }
     } catch (error: unknown) {
-      console.error("Sign up error:", error);
+      console.error("[SignUpForm] Exception caught during sign up:", error);
       if (error instanceof ApiError) {
+        console.error("[SignUpForm] ApiError details:", error.body);
         toast.error(
           (error.body.message as string) || "Failed to create account",
         );
@@ -86,6 +94,7 @@ export function SignUpForm({
         toast.error("Network error or server timeout. Please try again.");
       }
     } finally {
+      console.log("[SignUpForm] Resetting pending state.");
       setIsPending(false);
     }
   };

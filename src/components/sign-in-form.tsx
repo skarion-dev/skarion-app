@@ -38,24 +38,30 @@ export function SignInForm({
   });
 
   const onSubmit = async (data: LoginFormValues) => {
+    console.log("[SignInForm] Starting sign in for email:", data.email);
     setIsPending(true);
 
     try {
+      console.log("[SignInForm] Calling next-auth signIn('credentials')...");
       const res = await signIn("credentials", {
         redirect: false,
         email: data.email,
         password: data.password,
       });
+      console.log("[SignInForm] signIn returned:", res);
 
       if (res?.error) {
+        console.log("[SignInForm] Invalid credentials error logic triggered.");
         toast.error("Invalid email or password");
       } else if (res?.ok) {
+        console.log("[SignInForm] Sign in successful, redirecting to / ...");
         router.push("/");
       }
     } catch (error) {
-      console.error("Sign in error:", error);
+      console.error("[SignInForm] Exception caught during signIn:", error);
       toast.error("Network error or server timeout. Please try again.");
     } finally {
+      console.log("[SignInForm] Resetting pending state.");
       setIsPending(false);
     }
   };
