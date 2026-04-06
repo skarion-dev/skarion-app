@@ -40,21 +40,23 @@ export function SignInForm({
   const onSubmit = async (data: LoginFormValues) => {
     setIsPending(true);
 
-    const res = await signIn("credentials", {
-      redirect: false,
-      email: data.email,
-      password: data.password,
-    });
+    try {
+      const res = await signIn("credentials", {
+        redirect: false,
+        email: data.email,
+        password: data.password,
+      });
 
-    if (res?.error) {
-      toast.error("Invalid email or password");
+      if (res?.error) {
+        toast.error("Invalid email or password");
+      } else if (res?.ok) {
+        router.push("/");
+      }
+    } catch (error) {
+      console.error("Sign in error:", error);
+      toast.error("Network error or server timeout. Please try again.");
+    } finally {
       setIsPending(false);
-      return;
-    }
-
-    if (res?.ok) {
-      setIsPending(false);
-      router.push("/");
     }
   };
 
