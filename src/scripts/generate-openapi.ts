@@ -46,7 +46,7 @@ try {
     let content: string = fs.readFileSync(openApiFile, "utf-8");
 
     // Patch BASE
-    content = content.replace(/BASE:\s*(['"]).*?\1/, `BASE: '${BASE_URL}'`);
+    content = content.replace(/BASE:\s*(['"]).*?\1/, `BASE: process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001"`);
 
     // // Patch TOKEN
     // // Replace TOKEN: undefined with TOKEN: async () => { const session = await auth(); return session?.accessToken || ''; }
