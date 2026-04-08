@@ -10,10 +10,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
-import CreateCourseModal from "@/components/CreateCourseModal";
 
-export default async function AppRootPage() {
+export default async function CoursesPage() {
   const session = await auth();
 
   if (!session) {
@@ -24,11 +22,11 @@ export default async function AppRootPage() {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem className="hidden md:block">
-          <BreadcrumbLink>Home</BreadcrumbLink>
+          <BreadcrumbLink href="/">Home</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator className="hidden md:block" />
         <BreadcrumbItem>
-          <BreadcrumbPage>Dashboard</BreadcrumbPage>
+          <BreadcrumbPage>Courses</BreadcrumbPage>
         </BreadcrumbItem>
       </BreadcrumbList>
     </Breadcrumb>
@@ -36,10 +34,9 @@ export default async function AppRootPage() {
 
   return (
     <AppLayout breadcrumbs={breadcrumbs} user={session.user}>
-      <div className="flex justify-end p-2">
-        <CreateCourseModal>
-          <Button>Create New Course</Button>
-        </CreateCourseModal>
+      {/* <AppLayout> */}
+      <div className="max-w-4xl p-6">
+        
       </div>
     </AppLayout>
   );
