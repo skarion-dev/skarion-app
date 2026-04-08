@@ -128,10 +128,10 @@ export default function CreateCourseModal({ children }: { children: React.ReactN
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-[95vw] lg:max-w-[1200px] w-full p-0 bg-background shadow-2xl h-[90vh] flex flex-col overflow-hidden">
-        <div className="flex flex-col lg:flex-row h-full overflow-hidden">
+      <DialogContent className="max-w-[95vw] lg:max-w-[1200px] w-full p-0 bg-background shadow-2xl h-auto max-h-[95vh] lg:h-[90vh] flex flex-col overflow-y-auto lg:overflow-hidden">
+        <div className="flex flex-col lg:flex-row h-auto lg:h-full overflow-visible lg:overflow-hidden">
           {/* Left Side: Preview */}
-          <div className="p-12 flex flex-col justify-center items-center relative lg:w-[45%] xl:w-[40%] lg:border-r border-b lg:border-b-0 shrink-0 overflow-y-auto hidden md:flex">
+          <div className="p-12 flex flex-col justify-center items-center relative lg:w-[45%] xl:w-[40%] lg:border-r border-b lg:border-b-0 shrink-0 overflow-y-auto hidden lg:flex">
             <div className="w-full max-w-[400px] rounded-3xl overflow-hidden bg-card border border-primary/10 mt-10 lg:mt-0">
               <div className="w-full aspect-video bg-muted/80 flex items-center justify-center overflow-hidden relative">
                 {previewUrl ? (
@@ -163,8 +163,8 @@ export default function CreateCourseModal({ children }: { children: React.ReactN
             </div>
           </div>
 
-          {/* Right Side: Form (Scrollable) */}
-          <div className="p-8 sm:p-10 lg:p-12 flex flex-col flex-1 relative bg-card overflow-y-auto">
+          {/* Right Side: Form */}
+          <div className="p-8 sm:p-8 lg:p-8 flex flex-col flex-1 relative bg-card h-auto lg:h-full overflow-visible lg:overflow-hidden">
             <DialogHeader className="mb-8 shrink-0">
               <DialogTitle className="text-3xl font-bold tracking-tight">Create New Course</DialogTitle>
             </DialogHeader>
@@ -187,9 +187,9 @@ export default function CreateCourseModal({ children }: { children: React.ReactN
                     }
                   }
                 }}
-                className="flex-1 flex flex-col min-h-0"
+                className="flex-1 flex flex-col min-h-0 overflow-visible lg:overflow-hidden"
               >
-                <div className="flex-1 space-y-8 pb-4">
+                <div className="flex-1 space-y-8 pb-4 overflow-visible lg:overflow-y-auto pr-0 lg:pr-2">
                   {step === 1 && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
                       <FormField

@@ -13,6 +13,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Skarion",
   description: "Skarion helps individuals confidently navigate the hiring process and secure top-tier roles through expert coaching, resume optimization, and hands-on training.",
+  icons: {
+    icon: "/skarion.ico",
+  },
 };
 
 export default function RootLayout({
