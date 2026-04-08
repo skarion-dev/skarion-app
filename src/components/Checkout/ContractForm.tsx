@@ -134,7 +134,6 @@ export default function ContractForm({
         </div>
 
         <div
-          data-lenis-prevent
           className="mt-8 max-h-[360px] overflow-y-auto border border-white/20 rounded-lg py-4 px-6 bg-white/5 terms-scrollbar overscroll-contain"
         >
           <p className="text-[24px] font-[600] mb-6">Terms & Agreements</p>
