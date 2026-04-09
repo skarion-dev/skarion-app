@@ -173,14 +173,14 @@ export default function Header({ user }: { user?: any }) {
                 </DropdownMenu>
               ) : (
                 <>
-                  <Link href={`/auth/sign-in`}>
+                  <Link href={`/auth`}>
                     <div className="bg-[#191F38] border border-[#EBEBEB] rounded-[12px] px-4 py-2 text-center cursor-pointer">
                       <p className="text-[14px] text-white font-semibold">
                         Login
                       </p>
                     </div>
                   </Link>
-                  <Link href={`/auth/sign-up`}>
+                  <Link href={`/auth`}>
                     <div className="bg-white border border-[#EBEBEB] rounded-[12px] px-4 py-2 text-center cursor-pointer">
                       <p className="text-[14px] text-[#191F38] font-semibold">
                         Sign up

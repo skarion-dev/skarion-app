@@ -17,7 +17,7 @@ export default async function AppRootPage() {
   const session = await auth();
 
   if (!session) {
-    redirect("/auth/sign-in");
+    redirect("/auth");
   }
 
   const breadcrumbs = (

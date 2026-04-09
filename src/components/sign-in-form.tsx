@@ -11,6 +11,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
 
+import { Checkbox } from "@/components/ui/checkbox";
+import { Star, ArrowLeft, ArrowRight } from "lucide-react";
+import Link from "next/link";
+
+import { Button } from "@/components/ui/button";
+
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
@@ -18,10 +24,15 @@ export const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+interface SignInFormProps extends React.ComponentProps<"div"> {
+  onSwitch?: () => void;
+}
+
 export function SignInForm({
   className,
+  onSwitch,
   ...props
-}: React.ComponentProps<"form">) {
+}: SignInFormProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
 
@@ -38,142 +49,149 @@ export function SignInForm({
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    console.log("[SignInForm] Starting sign in for email:", data.email);
     setIsPending(true);
 
-    try {
-      console.log("[SignInForm] Calling next-auth signIn('credentials')...");
-      const res = await signIn("credentials", {
-        redirect: false,
-        email: data.email,
-        password: data.password,
-      });
-      console.log("[SignInForm] signIn returned:", res);
+    const res = await signIn("credentials", {
+      redirect: false,
+      email: data.email,
+      password: data.password,
+    });
 
-      if (res?.error) {
-        console.log("[SignInForm] Invalid credentials error logic triggered.");
-        toast.error("Invalid email or password");
-      } else if (res?.ok) {
-        console.log("[SignInForm] Sign in successful, redirecting to / ...");
-        router.push("/");
-      }
-    } catch (error) {
-      console.error("[SignInForm] Exception caught during signIn:", error);
-      toast.error("Network error or server timeout. Please try again.");
-    } finally {
-      console.log("[SignInForm] Resetting pending state.");
+    if (res?.error) {
+      toast.error("Invalid email or password");
       setIsPending(false);
+      return;
+    }
+
+    if (res?.ok) {
+      setIsPending(false);
+      router.push("/");
     }
   };
 
   return (
-    <form
-      className={cn("flex flex-col gap-6 h-[50vh] justify-center", className)}
-      {...props}
-      onSubmit={handleSubmit(onSubmit)}
-    >
-      <div className="grid gap-6 px-5">
-        <a href="/" className="flex justify-center mb-2 group relative">
-          <Image
-            src="/logo.svg"
-            alt="Skarion Logo"
-            width={16}
-            height={16}
-            className="w-[70]"
-          />
-        </a>
-        <div className="grid">
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="mail@example.com"
-            className="mt-3"
-            {...register("email")}
-          />
-          {errors.email && (
-            <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
-          )}
-        </div>
-        <div className="grid">
-          <div className="flex items-center">
-            <Label htmlFor="password">Password</Label>
-          </div>
-          <Input
-            id="password"
-            type="password"
-            className="mt-3"
-            {...register("password")}
-          />
-          {errors.password && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.password.message}
+    <div className={cn("flex flex-col w-full mt-25", className)} {...props}>
+      {/* Form Content Section */}
+      <div className="w-full">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-8"
+        >
+          <div className="flex flex-col gap-1 text-left mb-8">
+            <h1 className="text-[32px] font-bold text-slate-900">Login to your account</h1>
+            <p className="text-[14px] text-muted-foreground">
+              Sign in to continue your learning journey
             </p>
-          )}
-        </div>
-        <button
-          type="submit"
-          className="w-full flex items-center justify-center gap-4 py-2.5 px-6 text-[15px] font-medium tracking-wide text-slate-900 border border-slate-300 rounded-md hover:bg-slate-100 focus:outline-none cursor-pointer"
-          disabled={isPending}
-        >
-          {isPending ? "Signing In..." : "Sign In"}
-        </button>
-        <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">
-          <span className="bg-background text-muted-foreground relative z-10 px-2">
-            Or
-          </span>
-        </div>
-        <button
-          type="button"
-          className="w-full flex items-center justify-center gap-4 py-2.5 px-6 text-[15px] font-medium tracking-wide text-slate-900 border border-slate-300 rounded-md hover:bg-slate-100 focus:outline-none cursor-pointer"
-          onClick={() => signIn("google", { callbackUrl: "/" })}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20px"
-            className="inline"
-            viewBox="0 0 512 512"
-          >
-            <path
-              fill="#fbbd00"
-              d="M120 256c0-25.367 6.989-49.13 19.131-69.477v-86.308H52.823C18.568 144.703 0 198.922 0 256s18.568 111.297 52.823 155.785h86.308v-86.308C126.989 305.13 120 281.367 120 256z"
-              data-original="#fbbd00"
-            />
-            <path
-              fill="#0f9d58"
-              d="m256 392-60 60 60 60c57.079 0 111.297-18.568 155.785-52.823v-86.216h-86.216C305.044 385.147 281.181 392 256 392z"
-              data-original="#0f9d58"
-            />
-            <path
-              fill="#31aa52"
-              d="m139.131 325.477-86.308 86.308a260.085 260.085 0 0 0 22.158 25.235C123.333 485.371 187.62 512 256 512V392c-49.624 0-93.117-26.72-116.869-66.523z"
-              data-original="#31aa52"
-            />
-            <path
-              fill="#3c79e6"
-              d="M512 256a258.24 258.24 0 0 0-4.192-46.377l-2.251-12.299H256v120h121.452a135.385 135.385 0 0 1-51.884 55.638l86.216 86.216a260.085 260.085 0 0 0 25.235-22.158C485.371 388.667 512 324.38 512 256z"
-              data-original="#3c79e6"
-            />
-            <path
-              fill="#cf2d48"
-              d="m352.167 159.833 10.606 10.606 84.853-84.852-10.606-10.606C388.668 26.629 324.381 0 256 0l-60 60 60 60c36.326 0 70.479 14.146 96.167 39.833z"
-              data-original="#cf2d48"
-            />
-            <path
-              fill="#eb4132"
-              d="M256 120V0C187.62 0 123.333 26.629 74.98 74.98a259.849 259.849 0 0 0-22.158 25.235l86.308 86.308C162.883 146.72 206.376 120 256 120z"
-              data-original="#eb4132"
-            />
-          </svg>
-          Continue with google
-        </button>
+          </div>
+
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="m@example.com"
+                required
+                {...register("email")}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-[12px] mt-1">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <div className="flex items-center">
+                <Label htmlFor="password">Password</Label>
+              </div>
+              <Input
+                id="password"
+                type="password"
+                required
+                {...register("password")}
+              />
+              {errors.password && (
+                <p className="text-red-500 text-[12px] mt-1">{errors.password.message}</p>
+              )}
+            </div>
+
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Logging in..." : "Login"}
+            </Button>
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-slate-200" />
+            </div>
+            <div className="relative flex justify-center text-[12px] uppercase">
+              <span className="bg-white px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+
+            <button
+              type="button"
+              className="w-full flex items-center justify-center gap-4 py-2.5 px-6 text-[15px] font-medium tracking-wide text-slate-900 border border-slate-300 rounded-md hover:bg-slate-100 focus:outline-none cursor-pointer"
+              onClick={() => signIn("google", { callbackUrl: "/" })}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20px"
+                className="inline"
+                viewBox="0 0 512 512"
+              >
+                <path
+                  fill="#fbbd00"
+                  d="M120 256c0-25.367 6.989-49.13 19.131-69.477v-86.308H52.823C18.568 144.703 0 198.922 0 256s18.568 111.297 52.823 155.785h86.308v-86.308C126.989 305.13 120 281.367 120 256z"
+                  data-original="#fbbd00"
+                />
+                <path
+                  fill="#0f9d58"
+                  d="m256 392-60 60 60 60c57.079 0 111.297-18.568 155.785-52.823v-86.216h-86.216C305.044 385.147 281.181 392 256 392z"
+                  data-original="#0f9d58"
+                />
+                <path
+                  fill="#31aa52"
+                  d="m139.131 325.477-86.308 86.308a260.085 260.085 0 0 0 22.158 25.235C123.333 485.371 187.62 512 256 512V392c-49.624 0-93.117-26.72-116.869-66.523z"
+                  data-original="#31aa52"
+                />
+                <path
+                  fill="#3c79e6"
+                  d="M512 256a258.24 258.24 0 0 0-4.192-46.377l-2.251-12.299H256v120h121.452a135.385 135.385 0 0 1-51.884 55.638l86.216 86.216a260.085 260.085 0 0 0 25.235-22.158C485.371 388.667 512 324.38 512 256z"
+                  data-original="#3c79e6"
+                />
+                <path
+                  fill="#cf2d48"
+                  d="m352.167 159.833 10.606 10.606 84.853-84.852-10.606-10.606C388.668 26.629 324.381 0 256 0l-60 60 60 60c36.326 0 70.479 14.146 96.167 39.833z"
+                  data-original="#cf2d48"
+                />
+                <path
+                  fill="#eb4132"
+                  d="M256 120V0C187.62 0 123.333 26.629 74.98 74.98a259.849 259.849 0 0 0-22.158 25.235l86.308 86.308C162.883 146.72 206.376 120 256 120z"
+                  data-original="#eb4132"
+                />
+              </svg>
+              Continue with google
+            </button>
+
+          </div>
+
+          <p className="text-left text-[14px] text-muted-foreground">
+            Don&apos;t have an account?{" "}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                onSwitch?.();
+              }}
+              className="underline underline-offset-4 hover:text-primary cursor-pointer font-medium text-slate-900"
+            >
+              Sign up
+            </button>
+          </p>
+        </form>
       </div>
-      <div className="text-center text-sm">
-        Don&apos;t have an account?{" "}
-        <a href="/auth/sign-up" className="underline underline-offset-4">
-          Sign up
-        </a>
-      </div>
-    </form>
+    </div>
   );
 }
