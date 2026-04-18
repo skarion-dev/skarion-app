@@ -17,7 +17,7 @@ export default async function UsersPage() {
   const session = await auth();
 
   if (!session) {
-    redirect("/auth/sign-in");
+    redirect("/auth");
   }
 
   if (!session.user?.permissions?.includes("MANAGE_USERS")) {

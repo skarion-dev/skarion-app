@@ -15,7 +15,7 @@ export default async function CoursesPage() {
   const session = await auth();
 
   if (!session) {
-    redirect("/auth/sign-in");
+    redirect("/auth");
   }
 
   const breadcrumbs = (
