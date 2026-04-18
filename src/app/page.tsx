@@ -11,6 +11,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
+import { CopyCodeButton } from "@/components/CopyCodeButton";
 import CreateCourseModal from "@/components/CreateCourseModal";
 
 export default async function AppRootPage() {
@@ -57,11 +58,7 @@ export default async function AppRootPage() {
             <div className="bg-white px-4 py-2 rounded border font-mono font-bold tracking-wide text-lg shadow-sm">
               {session.user?.referralCode}
             </div>
-            <Button variant="outline" size="sm" onClick={() => {
-              if (session.user?.referralCode) {
-                navigator.clipboard.writeText(session.user.referralCode);
-              }
-            }}>Copy</Button>
+            <CopyCodeButton code={session.user?.referralCode} />
           </div>
         </div>
       )}
