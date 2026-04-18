@@ -12,6 +12,7 @@ import {
   PieChart,
   Settings2,
   SquareTerminal,
+  UserIcon,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -73,6 +74,17 @@ const data = {
         {
           title: "Courses",
           url: "/courses",
+        },
+      ],
+    },
+    {
+      title: "Users",
+      url: "/users",
+      icon: UserIcon,
+      items: [
+        {
+          title: "Active Users",
+          url: "/users",
         },
       ],
     },
@@ -149,7 +161,12 @@ export function AppSidebar({ user, ...props }: any & React.ComponentProps<typeof
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader> */}
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={data.navMain.filter(item => {
+          if (item.title === 'Users') {
+            return user?.permissions?.includes('MANAGE_USERS');
+          }
+          return true;
+        })} />
         {/* <NavProjects projects={data.projects} /> */}
       </SidebarContent>
       <SidebarFooter>

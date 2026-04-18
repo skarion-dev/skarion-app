@@ -47,6 +47,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             permissions: data.permissions ?? [],
             image: data.image,
             lastLogin: data.lastLogin,
+            referralCode: data.referralCode,
             accessToken: data.accessToken,
           };
         } catch (err) {
@@ -84,6 +85,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           permissions: user.permissions ?? [],
           image: user.image,
           lastLogin: user.lastLogin,
+          referralCode: user.referralCode,
           accessToken: user.accessToken,
         };
       },
@@ -103,6 +105,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         token.image = user.image;
         token.lastLogin = user.lastLogin;
         token.email = user.email;
+        token.referralCode = user.referralCode;
         token.accessToken = user.accessToken;
       }
       return token;
@@ -116,6 +119,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         session.user.image = token.image as string;
         session.user.lastLogin = token.lastLogin as string;
         session.user.email = token.email as string;
+        session.user.referralCode = token.referralCode as string;
       }
       (session as any).accessToken = token.accessToken as string;
       return session;

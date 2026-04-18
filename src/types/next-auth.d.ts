@@ -11,6 +11,7 @@ declare module "next-auth" {
       permissions?: string[];
       image?: string | null;
       lastLogin?: string;
+      referralCode?: string;
     };
     accessToken?: string;
   }
@@ -24,6 +25,7 @@ declare module "next-auth" {
     permissions?: string[];
     image?: string | null;
     lastLogin?: string;
+    referralCode?: string;
     accessToken?: string;
   }
 }
@@ -36,6 +38,7 @@ declare module "next-auth/jwt" {
     permissions?: string[];
     image?: string | null;
     lastLogin?: string;
+    referralCode?: string;
     accessToken?: string;
   }
 }
