@@ -15,7 +15,7 @@ export default async function ProfilePage() {
   const session = await auth();
 
   if (!session) {
-    redirect("/auth/sign-in");
+    redirect("/auth");
   }
 
   const breadcrumbs = (
