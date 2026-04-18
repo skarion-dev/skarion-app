@@ -103,7 +103,7 @@ function AuthContent() {
                         grabCursor
                         centeredSlides
                         slidesPerView={1}
-                        spaceBetween={16}
+                        spaceBetween={0}
                         coverflowEffect={{
                             rotate: 50,
                             stretch: 0,

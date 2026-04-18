@@ -189,7 +189,7 @@ export default function CreateCourseModal({ children }: { children: React.ReactN
                 }}
                 className="flex-1 flex flex-col min-h-0 overflow-visible lg:overflow-hidden"
               >
-                <div className="flex-1 space-y-8 pb-4 overflow-visible lg:overflow-y-auto pr-0 lg:pr-2">
+                <div className="flex-1 space-y-8 pb-4 overflow-visible lg:overflow-y-auto pr-0 lg:pr-2 px-0.5">
                   {step === 1 && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-right-8 duration-500">
                       <FormField
@@ -315,13 +315,13 @@ export default function CreateCourseModal({ children }: { children: React.ReactN
                                 ].map((option) => (
                                   <FormItem
                                     key={option.value}
-                                    className={`flex items-center space-x-3 space-y-0 p-3.5 border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer ${field.value === option.value ? 'border-primary ring-1 ring-primary/50 bg-primary/5' : 'border-muted-foreground/20'}`}
+                                    onClick={() => field.onChange(option.value)}
+                                    className={`flex items-center space-x-3 space-y-0 p-3.5 border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer ${field.value === option.value ? 'border-primary ring-1 ring-inset ring-primary/50 bg-primary/5' : 'border-muted-foreground/20'}`}
                                   >
                                     <FormControl>
                                       <RadioGroupItem
                                         value={option.value}
                                         id={`access-${option.value}`}
-                                        onClick={() => field.onChange(option.value)}
                                       />
                                     </FormControl>
                                     <FormLabel
