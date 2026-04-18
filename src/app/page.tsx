@@ -41,9 +41,11 @@ export default async function AppRootPage() {
     <AppLayout breadcrumbs={breadcrumbs} user={session.user}>
       <div className="flex justify-between items-center p-2 mb-4">
         <h1 className="text-2xl font-bold">Dashboard</h1>
-        <CreateCourseModal>
-          <Button>Create New Course</Button>
-        </CreateCourseModal>
+        {session.user?.permissions?.includes("MANAGE_COURSE") && (
+          <CreateCourseModal>
+            <Button>Create New Course</Button>
+          </CreateCourseModal>
+        )}
       </div>
 
       {session.user?.permissions?.includes("ACCESS_AFFILIATE_DASHBOARD") && (
