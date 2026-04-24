@@ -12,6 +12,8 @@ declare module "next-auth" {
       image?: string | null;
       lastLogin?: string;
       referralCode?: string;
+      needsUsername?: boolean;
+      username?: string;
     };
     accessToken?: string;
   }
@@ -27,6 +29,8 @@ declare module "next-auth" {
     lastLogin?: string;
     referralCode?: string;
     accessToken?: string;
+    needsUsername?: boolean;
+    username?: string;
   }
 }
 
@@ -40,5 +44,7 @@ declare module "next-auth/jwt" {
     lastLogin?: string;
     referralCode?: string;
     accessToken?: string;
+    needsUsername?: boolean;
+    username?: string;
   }
 }

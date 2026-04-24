@@ -69,7 +69,7 @@ export function SignUpForm({
       });
 
       toast.success("Account created successfully!");
-      router.push("/auth/sign-in");
+      router.push("/auth");
     } catch (error: unknown) {
       console.error("Signup error details:", error);
       if (error instanceof ApiError) {
