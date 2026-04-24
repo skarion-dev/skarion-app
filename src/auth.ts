@@ -49,6 +49,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             lastLogin: data.lastLogin,
             referralCode: data.referralCode,
             accessToken: data.accessToken,
+            username: data.username,
+            needsUsername: data.needsUsername ?? false,
           };
         } catch (err) {
           console.error("[Auth] Exception during fetch in authorize callback:", err);
@@ -87,6 +89,8 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           lastLogin: user.lastLogin,
           referralCode: user.referralCode,
           accessToken: user.accessToken,
+          username: user.username,
+          needsUsername: user.needsUsername ?? false,
         };
       },
     }),
@@ -96,7 +100,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
     maxAge: 60 * 60,
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = String(user.id);
         token.role = user.role;
@@ -107,6 +111,14 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         token.email = user.email;
         token.referralCode = user.referralCode;
         token.accessToken = user.accessToken;
+        token.username = user.username;
+        token.needsUsername = user.needsUsername ?? false;
+      }
+      // Handle session.update() calls (e.g. after setting a username)
+      if (trigger === 'update' && session) {
+        if (session.needsUsername !== undefined) token.needsUsername = session.needsUsername;
+        if (session.username !== undefined) token.username = session.username;
+        if (session.accessToken !== undefined) token.accessToken = session.accessToken;
       }
       return token;
     },
@@ -120,13 +132,15 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         session.user.lastLogin = token.lastLogin as string;
         session.user.email = token.email as string;
         session.user.referralCode = token.referralCode as string;
+        session.user.username = token.username as string;
+        session.user.needsUsername = token.needsUsername as boolean;
       }
       (session as any).accessToken = token.accessToken as string;
       return session;
     },
   },
   pages: {
-    signIn: "https://app.skarion.com/auth/sign-in",
+    signIn: "/auth",
   },
   cookies: {
     sessionToken: {

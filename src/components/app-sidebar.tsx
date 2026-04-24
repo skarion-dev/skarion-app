@@ -87,7 +87,7 @@ const data = {
           url: "/users",
         },
       ],
-    },
+    }
     // {
     //   title: "Documentation",
     //   url: "#",
