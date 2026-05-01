@@ -15,6 +15,8 @@ import { CopyCodeButton } from "@/components/CopyCodeButton";
 import CreateCourseModal from "@/components/CreateCourseModal";
 import { EtlDashboard } from "@/components/etl/etl-dashboard";
 import { getCandidates, getJobApplications, getEtlStats } from "@/app/etl/actions";
+import { getCrawlerStatus, getJobs } from "@/app/jobs/actions";
+import { JobsList } from "@/components/JobsList";
 
 export default async function AppRootPage() {
   const session = await auth();
@@ -23,10 +25,12 @@ export default async function AppRootPage() {
     redirect("/auth");
   }
 
-  const [candidates, applications, stats] = await Promise.all([
+  const [candidates, applications, stats, jobs, crawlerStatus] = await Promise.all([
     getCandidates(),
     getJobApplications(),
     getEtlStats(),
+    getJobs(),
+    getCrawlerStatus(),
   ]);
 
   const breadcrumbs = (
@@ -71,13 +75,19 @@ export default async function AppRootPage() {
           </div>
         )}
 
-        <EtlDashboard
-          initialCandidates={candidates}
-          initialApplications={applications}
-          initialStats={stats}
-          accessToken={(session as any).accessToken ?? ""}
-          currentUserName={session.user?.name ?? "You"}
-        />
+        <div className="space-y-6 mb-6">
+          <JobsList groupedJobs={jobs} crawlerStatus={crawlerStatus} />
+        </div>
+
+        <div className="pt-10 border-t">
+          <EtlDashboard
+            initialCandidates={candidates}
+            initialApplications={applications}
+            initialStats={stats}
+            accessToken={(session as any).accessToken ?? ""}
+            currentUserName={session.user?.name ?? "You"}
+          />
+        </div>
       </div>
     </AppLayout>
   );

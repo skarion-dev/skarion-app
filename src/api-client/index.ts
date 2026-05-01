@@ -21,5 +21,7 @@ export type { WebhookResponse } from "./models/WebhookResponse";
 export { AppService } from "./services/AppService";
 export { AuthService } from "./services/AuthService";
 export { CoursesService } from "./services/CoursesService";
+export { EtlService } from "./services/EtlService";
+export { JobsService } from "./services/JobsService";
 export { PaymentsService } from "./services/PaymentsService";
 export { WebhooksService } from "./services/WebhooksService";
