@@ -29,13 +29,24 @@ export async function getCandidates(): Promise<Candidate[]> {
 export async function getJobApplications(): Promise<JobApplication[]> {
   const headers = await getAuthHeaders();
   try {
-    const res = await fetch(getApiUrl("/etl/job-applications"), {
+    const url = getApiUrl("/etl/job-applications");
+    const res = await fetch(url, {
       headers,
       cache: "no-store",
     });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      console.error("[ETL] Failed to fetch job applications", {
+        url,
+        status: res.status,
+        statusText: res.statusText,
+        response: text,
+      });
+      return [];
+    }
     return res.json();
-  } catch {
+  } catch (error) {
+    console.error("[ETL] Error fetching job applications", error);
     return [];
   }
 }
