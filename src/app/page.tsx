@@ -17,6 +17,7 @@ import { EtlDashboard } from "@/components/etl/etl-dashboard";
 import { getCandidates, getJobApplications, getEtlStats } from "@/app/etl/actions";
 import { getCrawlerStatus, getJobs } from "@/app/jobs/actions";
 import { JobsList } from "@/components/JobsList";
+import { ScheduleTable } from "@/components/schedules/schedule-table";
 
 export default async function AppRootPage() {
   const session = await auth();
@@ -59,20 +60,33 @@ export default async function AppRootPage() {
         </div>
 
         {session.user?.permissions?.includes("ACCESS_AFFILIATE_DASHBOARD") && (
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-6">
-            <div>
-              <h2 className="text-lg font-semibold text-primary mb-1">Affiliate Dashboard</h2>
-              <p className="text-sm text-muted-foreground mr-4">
-                Share this code with your audience.
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="bg-white px-4 py-2 rounded border font-mono font-bold tracking-wide text-lg shadow-sm">
-                {session.user?.referralCode}
+          <>
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-6">
+              <div>
+                <h2 className="text-lg font-semibold text-primary mb-1">Affiliate Dashboard</h2>
+                <p className="text-sm text-muted-foreground mr-4">
+                  Share this code with your audience.
+                </p>
               </div>
-              <CopyCodeButton code={session.user?.referralCode} />
+              <div className="flex items-center gap-3">
+                <div className="bg-white px-4 py-2 rounded border font-mono font-bold tracking-wide text-lg shadow-sm">
+                  {session.user?.referralCode}
+                </div>
+                <CopyCodeButton code={session.user?.referralCode} />
+              </div>
             </div>
-          </div>
+            <div className="p-6">
+              <div className="mb-8 font-inter">
+                <h1 className="text-3xl font-bold tracking-tight text-gray-900 border-b pb-2">
+                  Forms & Schedules
+                </h1>
+                <p className="text-muted-foreground mt-2">
+                  View booking details and filter by affiliate referral code.
+                </p>
+              </div>
+              <ScheduleTable />
+            </div>
+          </>
         )}
 
         <div className="space-y-6 mb-6">
