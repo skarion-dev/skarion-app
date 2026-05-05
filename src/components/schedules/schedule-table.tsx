@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getSchedules } from "@/app/schedules/actions";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -13,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 type FormResponse = {
   id: string;
@@ -29,12 +27,11 @@ type FormResponse = {
 export function ScheduleTable() {
   const [schedules, setSchedules] = useState<FormResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchCode, setSearchCode] = useState("");
 
-  const loadData = useCallback(async (code?: string) => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getSchedules(code);
+      const data = await getSchedules();
       setSchedules(data);
     } catch (error) {
       console.error("Error loading schedules:", error);
@@ -47,31 +44,11 @@ export function ScheduleTable() {
     loadData();
   }, [loadData]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    loadData(searchCode);
-  };
-
   return (
     <Card className="border shadow-sm flex flex-col font-inter">
-      <div className="p-4 border-b bg-muted/20 flex flex-col sm:flex-row gap-4 justify-between items-center">
+      <div className="px-4 py-3 border-b bg-muted/20 flex items-center justify-between">
         <h2 className="font-semibold text-lg">Recent Bookings</h2>
-        <form onSubmit={handleSearch} className="flex gap-2 w-full sm:w-auto">
-          <Input
-            placeholder="Search by referral code..."
-            value={searchCode}
-            onChange={(e) => setSearchCode(e.target.value)}
-            className="w-full sm:w-64 bg-background"
-          />
-          <Button type="submit" disabled={loading}>
-            {loading ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Search className="w-4 h-4 mr-2" />
-            )}
-            Search
-          </Button>
-        </form>
+        {loading && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
       </div>
 
       <CardContent className="p-0">

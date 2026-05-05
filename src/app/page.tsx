@@ -75,15 +75,7 @@ export default async function AppRootPage() {
                 <CopyCodeButton code={session.user?.referralCode} />
               </div>
             </div>
-            <div className="p-6">
-              <div className="mb-8 font-inter">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900 border-b pb-2">
-                  Forms & Schedules
-                </h1>
-                <p className="text-muted-foreground mt-2">
-                  View booking details and filter by affiliate referral code.
-                </p>
-              </div>
+            <div className="mb-6">
               <ScheduleTable />
             </div>
           </>
