@@ -127,6 +127,16 @@ export class EtlService {
     return __request(OpenAPI, { method: "GET", url: "/etl/stats" });
   }
 
+  /** Returns only the applications for the logged-in candidate. */
+  public static getMyApplications(): CancelablePromise<JobApplication[]> {
+    return __request(OpenAPI, { method: "GET", url: "/etl/my-applications" });
+  }
+
+  /** Returns stats scoped to the logged-in candidate. */
+  public static getMyStats(): CancelablePromise<EtlStats> {
+    return __request(OpenAPI, { method: "GET", url: "/etl/my-stats" });
+  }
+
   /**
    * Upload a resume file to SharePoint.
    * Returns { url, name } from the server.

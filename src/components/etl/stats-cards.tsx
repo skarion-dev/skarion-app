@@ -8,6 +8,7 @@ interface Props {
   stats: EtlStats;
   shortlistedCount: number;
   confirmedCount: number;
+  hideCandidatesCount?: boolean;
 }
 
 interface StatCardProps {
@@ -43,16 +44,18 @@ function StatCard({ label, value, icon, color, bgColor, trend }: StatCardProps) 
   );
 }
 
-export function StatsCards({ stats, shortlistedCount, confirmedCount }: Props) {
+export function StatsCards({ stats, shortlistedCount, confirmedCount, hideCandidatesCount }: Props) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <StatCard
-        label="Total Candidates"
-        value={stats.totalCandidates}
-        icon={<Users className="h-5 w-5 text-violet-600" />}
-        color="text-violet-700 dark:text-violet-400"
-        bgColor="bg-violet-100 dark:bg-violet-900/30"
-      />
+    <div className={`grid gap-3 ${hideCandidatesCount ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-2 sm:grid-cols-4"}`}>
+      {!hideCandidatesCount && (
+        <StatCard
+          label="Total Candidates"
+          value={stats.totalCandidates}
+          icon={<Users className="h-5 w-5 text-violet-600" />}
+          color="text-violet-700 dark:text-violet-400"
+          bgColor="bg-violet-100 dark:bg-violet-900/30"
+        />
+      )}
       <StatCard
         label="Total Applications"
         value={stats.totalApplications}
