@@ -64,3 +64,31 @@ export async function getEtlStats(): Promise<EtlStats | null> {
     return null;
   }
 }
+
+export async function getMyApplications(): Promise<JobApplication[]> {
+  const headers = await getAuthHeaders();
+  try {
+    const res = await fetch(getApiUrl("/etl/my-applications"), {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function getMyStats(): Promise<EtlStats | null> {
+  const headers = await getAuthHeaders();
+  try {
+    const res = await fetch(getApiUrl("/etl/my-stats"), {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}

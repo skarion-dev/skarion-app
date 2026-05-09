@@ -14,7 +14,14 @@ import { Button } from "@/components/ui/button";
 import { CopyCodeButton } from "@/components/CopyCodeButton";
 import CreateCourseModal from "@/components/CreateCourseModal";
 import { EtlDashboard } from "@/components/etl/etl-dashboard";
-import { getCandidates, getJobApplications, getEtlStats } from "@/app/etl/actions";
+import { CandidateDashboard } from "@/components/etl/candidate-dashboard";
+import {
+  getCandidates,
+  getJobApplications,
+  getEtlStats,
+  getMyApplications,
+  getMyStats,
+} from "@/app/etl/actions";
 import { getCrawlerStatus, getJobs } from "@/app/jobs/actions";
 import { JobsList } from "@/components/JobsList";
 import { ScheduleTable } from "@/components/schedules/schedule-table";
@@ -26,13 +33,10 @@ export default async function AppRootPage() {
     redirect("/auth");
   }
 
-  const [candidates, applications, stats, jobs, crawlerStatus] = await Promise.all([
-    getCandidates(),
-    getJobApplications(),
-    getEtlStats(),
-    getJobs(),
-    getCrawlerStatus(),
-  ]);
+  const permissions: string[] = session.user?.permissions ?? [];
+  const isCandidate =
+    permissions.includes("ACCESS_CANDIDATE_DASHBOARD") &&
+    !permissions.includes("MANAGE_USERS");
 
   const breadcrumbs = (
     <Breadcrumb>
@@ -47,6 +51,38 @@ export default async function AppRootPage() {
       </BreadcrumbList>
     </Breadcrumb>
   );
+
+  // ── Candidate view ────────────────────────────────────────────────────────
+  if (isCandidate) {
+    const [myApplications, myStats] = await Promise.all([
+      getMyApplications(),
+      getMyStats(),
+    ]);
+
+    return (
+      <AppLayout breadcrumbs={breadcrumbs} user={session.user}>
+        <div className="p-4">
+          <div className="pt-2">
+            <CandidateDashboard
+              initialApplications={myApplications}
+              initialStats={myStats}
+              accessToken={(session as any).accessToken ?? ""}
+              currentUserName={session.user?.name ?? "You"}
+            />
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // ── Admin / full dashboard view ───────────────────────────────────────────
+  const [candidates, applications, stats, jobs, crawlerStatus] = await Promise.all([
+    getCandidates(),
+    getJobApplications(),
+    getEtlStats(),
+    getJobs(),
+    getCrawlerStatus(),
+  ]);
 
   return (
     <AppLayout breadcrumbs={breadcrumbs} user={session.user}>
