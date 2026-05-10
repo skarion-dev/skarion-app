@@ -25,6 +25,7 @@ import {
 import { getCrawlerStatus, getJobs } from "@/app/jobs/actions";
 import { JobsList } from "@/components/JobsList";
 import { ScheduleTable } from "@/components/schedules/schedule-table";
+import { Lock } from "lucide-react";
 
 export default async function AppRootPage() {
   const session = await auth();
@@ -34,9 +35,10 @@ export default async function AppRootPage() {
   }
 
   const permissions: string[] = session.user?.permissions ?? [];
-  const isCandidate =
-    permissions.includes("ACCESS_CANDIDATE_DASHBOARD") &&
-    !permissions.includes("MANAGE_USERS");
+
+  const hasEtlAccess = permissions.includes("ACCESS_ETL_DASHBOARD");
+  const isCandidateOnly =
+    permissions.includes("ACCESS_CANDIDATE_DASHBOARD") && !hasEtlAccess;
 
   const breadcrumbs = (
     <Breadcrumb>
@@ -52,8 +54,8 @@ export default async function AppRootPage() {
     </Breadcrumb>
   );
 
-  // ── Candidate view ────────────────────────────────────────────────────────
-  if (isCandidate) {
+  // ── Candidate-only view (has ACCESS_CANDIDATE_DASHBOARD, not ACCESS_ETL_DASHBOARD) ──
+  if (isCandidateOnly) {
     const [myApplications, myStats] = await Promise.all([
       getMyApplications(),
       getMyStats(),
@@ -62,10 +64,72 @@ export default async function AppRootPage() {
     return (
       <AppLayout breadcrumbs={breadcrumbs} user={session.user}>
         <div className="p-4">
-          <div className="pt-2">
-            <CandidateDashboard
-              initialApplications={myApplications}
-              initialStats={myStats}
+          <CandidateDashboard
+            initialApplications={myApplications}
+            initialStats={myStats}
+            accessToken={(session as any).accessToken ?? ""}
+            currentUserName={session.user?.name ?? "You"}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // ── Full ETL dashboard view (has ACCESS_ETL_DASHBOARD) ───────────────────────
+  if (hasEtlAccess) {
+    const [candidates, applications, stats, jobs, crawlerStatus] =
+      await Promise.all([
+        getCandidates(),
+        getJobApplications(),
+        getEtlStats(),
+        getJobs(),
+        getCrawlerStatus(),
+      ]);
+
+    return (
+      <AppLayout breadcrumbs={breadcrumbs} user={session.user}>
+        <div className="p-4">
+          <div className="flex justify-end items-center mb-6">
+            {permissions.includes("MANAGE_COURSE") && (
+              <CreateCourseModal>
+                <Button>Create New Course</Button>
+              </CreateCourseModal>
+            )}
+          </div>
+
+          {permissions.includes("ACCESS_AFFILIATE_DASHBOARD") && (
+            <>
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-primary mb-1">
+                    Affiliate Dashboard
+                  </h2>
+                  <p className="text-sm text-muted-foreground mr-4">
+                    Share this code with your audience.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-white px-4 py-2 rounded border font-mono font-bold tracking-wide text-lg shadow-sm">
+                    {session.user?.referralCode}
+                  </div>
+                  <CopyCodeButton code={session.user?.referralCode} />
+                </div>
+              </div>
+              <div className="mb-6">
+                <ScheduleTable />
+              </div>
+            </>
+          )}
+
+          <div className="space-y-6 mb-6">
+            <JobsList groupedJobs={jobs} crawlerStatus={crawlerStatus} />
+          </div>
+
+          <div className="pt-10 border-t">
+            <EtlDashboard
+              initialCandidates={candidates}
+              initialApplications={applications}
+              initialStats={stats}
               accessToken={(session as any).accessToken ?? ""}
               currentUserName={session.user?.name ?? "You"}
             />
@@ -75,60 +139,19 @@ export default async function AppRootPage() {
     );
   }
 
-  // ── Admin / full dashboard view ───────────────────────────────────────────
-  const [candidates, applications, stats, jobs, crawlerStatus] = await Promise.all([
-    getCandidates(),
-    getJobApplications(),
-    getEtlStats(),
-    getJobs(),
-    getCrawlerStatus(),
-  ]);
-
+  // ── No relevant permissions — empty dashboard ─────────────────────────────
   return (
     <AppLayout breadcrumbs={breadcrumbs} user={session.user}>
-      <div className="p-4">
-        <div className="flex justify-end items-center mb-6">
-          {session.user?.permissions?.includes("MANAGE_COURSE") && (
-            <CreateCourseModal>
-              <Button>Create New Course</Button>
-            </CreateCourseModal>
-          )}
-        </div>
-
-        {session.user?.permissions?.includes("ACCESS_AFFILIATE_DASHBOARD") && (
-          <>
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center mb-6">
-              <div>
-                <h2 className="text-lg font-semibold text-primary mb-1">Affiliate Dashboard</h2>
-                <p className="text-sm text-muted-foreground mr-4">
-                  Share this code with your audience.
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="bg-white px-4 py-2 rounded border font-mono font-bold tracking-wide text-lg shadow-sm">
-                  {session.user?.referralCode}
-                </div>
-                <CopyCodeButton code={session.user?.referralCode} />
-              </div>
-            </div>
-            <div className="mb-6">
-              <ScheduleTable />
-            </div>
-          </>
-        )}
-
-        <div className="space-y-6 mb-6">
-          <JobsList groupedJobs={jobs} crawlerStatus={crawlerStatus} />
-        </div>
-
-        <div className="pt-10 border-t">
-          <EtlDashboard
-            initialCandidates={candidates}
-            initialApplications={applications}
-            initialStats={stats}
-            accessToken={(session as any).accessToken ?? ""}
-            currentUserName={session.user?.name ?? "You"}
-          />
+      <div className="p-4 flex items-center justify-center min-h-[60vh]">
+        <div className="text-center max-w-sm">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+            <Lock className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <h2 className="text-lg font-semibold mb-2">No dashboard access</h2>
+          <p className="text-sm text-muted-foreground">
+            Your account does not have access to any dashboard sections yet.
+            Please contact an administrator to get your role assigned.
+          </p>
         </div>
       </div>
     </AppLayout>
