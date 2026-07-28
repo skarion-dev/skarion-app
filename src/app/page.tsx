@@ -25,6 +25,8 @@ import {
 import { getCrawlerStatus, getJobs } from "@/app/jobs/actions";
 import { JobsList } from "@/components/JobsList";
 import { ScheduleTable } from "@/components/schedules/schedule-table";
+import { ChatPanel } from "@/components/chat/chat-panel";
+import { BookingSettingsPanel } from "@/components/booking/booking-settings-panel";
 import { Lock } from "lucide-react";
 
 export default async function AppRootPage() {
@@ -39,6 +41,12 @@ export default async function AppRootPage() {
   const hasEtlAccess = permissions.includes("ACCESS_ETL_DASHBOARD");
   const isCandidateOnly =
     permissions.includes("ACCESS_CANDIDATE_DASHBOARD") && !hasEtlAccess;
+  const isCandidate = permissions.includes("ACCESS_CANDIDATE_DASHBOARD");
+  const isCustomerSupport = permissions.includes(
+    "ACCESS_CUSTOMER_SUPPORT_DASHBOARD"
+  );
+
+  const showChat = isCandidate || isCustomerSupport;
 
   const breadcrumbs = (
     <Breadcrumb>
@@ -54,7 +62,16 @@ export default async function AppRootPage() {
     </Breadcrumb>
   );
 
-  // ── Candidate-only view (has ACCESS_CANDIDATE_DASHBOARD, not ACCESS_ETL_DASHBOARD) ──
+  const chatPanel = showChat ? (
+    <ChatPanel
+      accessToken={(session as any).accessToken ?? ""}
+      currentUserId={session.user?.id ?? ""}
+      isCandidate={isCandidate}
+      isCustomerSupport={isCustomerSupport}
+    />
+  ) : undefined;
+
+  // ── Candidate-only view ───────────────────────────────────────────────────
   if (isCandidateOnly) {
     const [myApplications, myStats] = await Promise.all([
       getMyApplications(),
@@ -62,7 +79,7 @@ export default async function AppRootPage() {
     ]);
 
     return (
-      <AppLayout breadcrumbs={breadcrumbs} user={session.user}>
+      <AppLayout breadcrumbs={breadcrumbs} user={session.user} chatPanel={chatPanel}>
         <div className="p-4">
           <CandidateDashboard
             initialApplications={myApplications}
@@ -75,7 +92,7 @@ export default async function AppRootPage() {
     );
   }
 
-  // ── Full ETL dashboard view (has ACCESS_ETL_DASHBOARD) ───────────────────────
+  // ── Full ETL dashboard view ───────────────────────────────────────────────
   if (hasEtlAccess) {
     const [candidates, applications, stats, jobs, crawlerStatus] =
       await Promise.all([
@@ -87,8 +104,8 @@ export default async function AppRootPage() {
       ]);
 
     return (
-      <AppLayout breadcrumbs={breadcrumbs} user={session.user}>
-        <div className="p-4">
+      <AppLayout breadcrumbs={breadcrumbs} user={session.user} chatPanel={chatPanel}>
+        <div>
           <div className="flex justify-end items-center mb-6">
             {permissions.includes("MANAGE_COURSE") && (
               <CreateCourseModal>
@@ -121,6 +138,12 @@ export default async function AppRootPage() {
             </>
           )}
 
+          {permissions.includes("MANAGE_BOOKING_SETTINGS") && (
+            <div className="mb-6">
+              <BookingSettingsPanel />
+            </div>
+          )}
+
           <div className="space-y-6 mb-6">
             <JobsList groupedJobs={jobs} crawlerStatus={crawlerStatus} />
           </div>
@@ -139,10 +162,10 @@ export default async function AppRootPage() {
     );
   }
 
-  // ── No relevant permissions — empty dashboard ─────────────────────────────
+  // ── No relevant permissions ───────────────────────────────────────────────
   return (
-    <AppLayout breadcrumbs={breadcrumbs} user={session.user}>
-      <div className="p-4 flex items-center justify-center min-h-[60vh]">
+    <AppLayout breadcrumbs={breadcrumbs} user={session.user} chatPanel={chatPanel}>
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center max-w-sm">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
             <Lock className="h-6 w-6 text-muted-foreground" />
