@@ -9,9 +9,9 @@ import {
   AlertCircle,
   RefreshCw,
   Settings2,
-  RotateCcw,
-  ChevronDown,
-  ChevronUp,
+  Trash2,
+  PlusCircle,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,133 +41,103 @@ const WEEKDAY_LABELS: { iso: number; label: string; short: string }[] = [
   { iso: 7, label: "Sunday", short: "Sun" },
 ];
 
-// ── Per-day row component ─────────────────────────────────────────────────────
+/** Format a YYYY-MM-DD string to a readable label, e.g. "Aug 20, 2026 (Wed)" */
+function formatDateLabel(dateStr: string): string {
+  try {
+    // Parse as local date to avoid UTC offset shifts
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      weekday: "short",
+    }).format(dt);
+  } catch {
+    return dateStr;
+  }
+}
 
-function DaySlotRow({
-  iso,
-  label,
+/** Today's date in YYYY-MM-DD (local timezone) */
+function todayLocal(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+// ── Date Override Row ─────────────────────────────────────────────────────────
+
+function DateOverrideRow({
+  dateStr,
+  slots,
   allSlots,
-  globalSlots,
-  dayOverrides,
-  onOverrideChange,
-  onReset,
+  onSlotsChange,
+  onRemove,
 }: {
-  iso: number;
-  label: string;
+  dateStr: string;
+  slots: string[];
   allSlots: BookingSettingsData["allSlotDefinitions"];
-  globalSlots: string[];
-  dayOverrides: Record<string, string[]> | null;
-  onOverrideChange: (iso: number, slots: string[]) => void;
-  onReset: (iso: number) => void;
+  onSlotsChange: (slots: string[]) => void;
+  onRemove: () => void;
 }) {
-  const key = String(iso);
-  const hasOverride = dayOverrides !== null && key in dayOverrides;
-  const activeSlots = hasOverride ? dayOverrides![key] : globalSlots;
-  const [expanded, setExpanded] = useState(false);
-
-  const toggleSlot = (value: string) => {
-    const current = hasOverride ? dayOverrides![key] : [...globalSlots];
-    const next = current.includes(value)
-      ? current.filter((s) => s !== value)
-      : [...current, value];
-    onOverrideChange(iso, next);
+  const toggle = (value: string) => {
+    const next = slots.includes(value)
+      ? slots.filter((s) => s !== value)
+      : [...slots, value];
+    onSlotsChange(next);
   };
 
   return (
-    <div
-      className={[
-        "rounded-xl border transition-all duration-200",
-        hasOverride
-          ? "border-primary/30 bg-primary/5"
-          : "border-border bg-background",
-      ].join(" ")}
-    >
-      {/* Day header row */}
-      <button
-        type="button"
-        onClick={() => setExpanded((p) => !p)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/20 rounded-xl transition-colors"
-      >
-        <span className="w-24 text-sm font-semibold shrink-0">{label}</span>
-
-        {/* Active slots preview */}
-        <div className="flex flex-wrap gap-1.5 flex-1 min-w-0">
-          {activeSlots.length === 0 ? (
-            <span className="text-xs text-destructive italic">No slots — day won&apos;t appear</span>
-          ) : (
-            activeSlots.map((v) => {
-              const def = allSlots.find((s) => s.value === v);
-              return (
-                <span
-                  key={v}
-                  className="px-2 py-0.5 rounded-md text-xs font-medium bg-primary/10 text-primary"
-                >
-                  {def?.label ?? v}
-                </span>
-              );
-            })
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          {hasOverride ? (
-            <Badge variant="default" className="text-[10px] px-1.5 py-0.5 h-auto">
-              Custom
-            </Badge>
-          ) : (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0.5 h-auto">
-              Global default
+    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+      {/* Date header */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-primary shrink-0" />
+          <span className="font-semibold text-sm">{formatDateLabel(dateStr)}</span>
+          {slots.length === 0 && (
+            <Badge variant="destructive" className="text-[10px] px-1.5 py-0 h-auto">
+              No slots — date hidden
             </Badge>
           )}
-          {expanded ? (
-            <ChevronUp className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          )}
         </div>
-      </button>
+        <button
+          type="button"
+          onClick={onRemove}
+          title="Remove override — revert to global slots"
+          className="p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      </div>
 
-      {/* Expanded slot toggles */}
-      {expanded && (
-        <div className="px-4 pb-4 border-t border-border/50 pt-3 space-y-3">
-          <div className="flex flex-wrap gap-2">
-            {allSlots.map((slot) => {
-              const active = activeSlots.includes(slot.value);
-              return (
-                <button
-                  key={slot.value}
-                  type="button"
-                  onClick={() => toggleSlot(slot.value)}
-                  className={[
-                    "px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 select-none",
-                    active
-                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                      : "bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-foreground",
-                  ].join(" ")}
-                >
-                  {slot.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {hasOverride && (
+      {/* Slot toggles */}
+      <div className="flex flex-wrap gap-2">
+        {allSlots.map((slot) => {
+          const active = slots.includes(slot.value);
+          return (
             <button
+              key={slot.value}
               type="button"
-              onClick={() => onReset(iso)}
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => toggle(slot.value)}
+              className={[
+                "px-3 py-1.5 rounded-lg text-xs font-medium border transition-all duration-150 select-none",
+                active
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-foreground",
+              ].join(" ")}
             >
-              <RotateCcw className="h-3 w-3" />
-              Reset to global default
+              {slot.label}
             </button>
-          )}
+          );
+        })}
+      </div>
 
-          {!hasOverride && (
-            <p className="text-xs text-muted-foreground">
-              Editing any slot here will create a custom override for {label} only.
-            </p>
-          )}
-        </div>
+      {slots.length === 0 && (
+        <p className="text-xs text-destructive">
+          No slots selected — this date will not appear in the booking calendar.
+        </p>
       )}
     </div>
   );
@@ -184,11 +154,14 @@ export function BookingSettingsPanel() {
   // Editable state
   const [enabledSlots, setEnabledSlots] = useState<string[]>([]);
   const [enabledWeekdays, setEnabledWeekdays] = useState<number[]>([]);
-  const [dayOverrides, setDayOverrides] = useState<Record<string, string[]> | null>(null);
+  const [dateOverrides, setDateOverrides] = useState<Record<string, string[]>>({});
   const [durationMinutes, setDurationMinutes] = useState(30);
   const [availabilityDays, setAvailabilityDays] = useState(30);
   const [minimumLeadHours, setMinimumLeadHours] = useState(2);
   const [blockUntil, setBlockUntil] = useState<string>("");
+
+  // New override form
+  const [newDate, setNewDate] = useState("");
 
   const loadSettings = useCallback(async () => {
     setLoading(true);
@@ -198,7 +171,7 @@ export function BookingSettingsPanel() {
       setSettings(data);
       setEnabledSlots(data.enabledSlots);
       setEnabledWeekdays(data.enabledWeekdays.map(Number));
-      setDayOverrides(data.dayOverrides ?? null);
+      setDateOverrides(data.dateOverrides ?? {});
       setDurationMinutes(data.durationMinutes);
       setAvailabilityDays(data.availabilityDays);
       setMinimumLeadHours(data.minimumLeadHours);
@@ -232,21 +205,33 @@ export function BookingSettingsPanel() {
     );
   };
 
-  /** Set a per-day override for the given weekday. */
-  const handleDayOverrideChange = (iso: number, slots: string[]) => {
-    setDayOverrides((prev) => ({
-      ...(prev ?? {}),
-      [String(iso)]: slots,
+  const addDateOverride = () => {
+    if (!newDate) {
+      toast.error("Please pick a date first.");
+      return;
+    }
+    if (newDate in dateOverrides) {
+      toast.info(`${formatDateLabel(newDate)} already has an override.`);
+      return;
+    }
+    // Seed with the current global enabled slots so the user starts from a
+    // sensible default rather than an empty selection.
+    setDateOverrides((prev) => ({
+      ...prev,
+      [newDate]: [...enabledSlots],
     }));
+    setNewDate("");
   };
 
-  /** Remove the per-day override for the given weekday (revert to global). */
-  const handleDayReset = (iso: number) => {
-    setDayOverrides((prev) => {
-      if (!prev) return prev;
+  const updateDateOverrideSlots = (dateStr: string, slots: string[]) => {
+    setDateOverrides((prev) => ({ ...prev, [dateStr]: slots }));
+  };
+
+  const removeDateOverride = (dateStr: string) => {
+    setDateOverrides((prev) => {
       const next = { ...prev };
-      delete next[String(iso)];
-      return Object.keys(next).length > 0 ? next : null;
+      delete next[dateStr];
+      return next;
     });
   };
 
@@ -265,7 +250,7 @@ export function BookingSettingsPanel() {
         const payload = {
           enabledSlots,
           enabledWeekdays,
-          dayOverrides: dayOverrides && Object.keys(dayOverrides).length > 0 ? dayOverrides : null,
+          dateOverrides: Object.keys(dateOverrides).length > 0 ? dateOverrides : null,
           durationMinutes,
           availabilityDays,
           minimumLeadHours,
@@ -319,11 +304,9 @@ export function BookingSettingsPanel() {
       }).format(new Date(settings.updatedAt))
     : null;
 
-  const activeEnabledWeekdays = WEEKDAY_LABELS.filter(({ iso }) =>
-    enabledWeekdays.includes(iso)
-  );
-
-  const customOverrideDayCount = dayOverrides ? Object.keys(dayOverrides).length : 0;
+  // Sort overridden dates chronologically
+  const sortedOverrideDates = Object.keys(dateOverrides).sort();
+  const overrideCount = sortedOverrideDates.length;
 
   return (
     <Card className="border shadow-sm">
@@ -403,13 +386,13 @@ export function BookingSettingsPanel() {
         <section>
           <div className="flex items-center gap-2 mb-1">
             <Clock3 className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-medium text-sm">Global Default Time Slots</h3>
+            <h3 className="font-medium text-sm">Default Time Slots</h3>
             <Badge variant="secondary" className="text-xs ml-auto">
               {enabledSlots.length} / {allSlots.length} enabled
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground mb-3">
-            These slots apply to all working days unless overridden per-day below.
+            These slots appear on every available date unless you override a specific date below.
           </p>
           <div className="flex flex-wrap gap-2">
             {allSlots.map((slot) => {
@@ -433,51 +416,76 @@ export function BookingSettingsPanel() {
           </div>
           {enabledSlots.length === 0 && (
             <p className="text-xs text-red-500 mt-2">
-              At least one global slot must be selected.
+              At least one slot must be selected.
             </p>
           )}
         </section>
 
         <Separator />
 
-        {/* ── Per-Day Overrides ────────────────────────────────────── */}
-        <section>
-          <div className="flex items-center gap-2 mb-1">
-            <Clock3 className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-medium text-sm">Per-Day Time Overrides</h3>
-            {customOverrideDayCount > 0 && (
+        {/* ── Date-Specific Overrides ──────────────────────────────── */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <h3 className="font-medium text-sm">Date-Specific Time Overrides</h3>
+            {overrideCount > 0 && (
               <Badge variant="default" className="text-xs ml-auto">
-                {customOverrideDayCount} day{customOverrideDayCount !== 1 ? "s" : ""} customised
-              </Badge>
-            )}
-            {customOverrideDayCount === 0 && (
-              <Badge variant="secondary" className="text-xs ml-auto">
-                All using global
+                {overrideCount} date{overrideCount !== 1 ? "s" : ""} overridden
               </Badge>
             )}
           </div>
-          <p className="text-xs text-muted-foreground mb-3">
-            Click a day to expand it and choose different time slots for that day only.
-            Days marked <span className="font-medium text-foreground">Global default</span> inherit
-            the slots above.
+          <p className="text-xs text-muted-foreground">
+            Override the time slots for a <strong>specific date</strong> in the booking calendar.
+            Use this to offer different hours on a particular day — or set it to no slots
+            to block that date entirely. Dates without an override use the default slots above.
           </p>
 
-          {activeEnabledWeekdays.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic">
-              Enable at least one working day above to configure per-day slots.
-            </p>
+          {/* Add new override */}
+          <div className="flex gap-2 items-end flex-wrap">
+            <div className="space-y-1">
+              <Label htmlFor="new-date-override" className="text-xs font-medium">
+                Pick a date to override
+              </Label>
+              <Input
+                id="new-date-override"
+                type="date"
+                value={newDate}
+                min={todayLocal()}
+                onChange={(e) => setNewDate(e.target.value)}
+                className="h-9 text-sm w-48"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addDateOverride}
+              className="gap-1.5 h-9"
+            >
+              <PlusCircle className="h-4 w-4" />
+              Add override
+            </Button>
+          </div>
+
+          {/* Existing overrides */}
+          {sortedOverrideDates.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-6 text-center">
+              <Calendar className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No date overrides yet.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Pick a date above to customise its available slots.
+              </p>
+            </div>
           ) : (
-            <div className="space-y-2">
-              {activeEnabledWeekdays.map(({ iso, label }) => (
-                <DaySlotRow
-                  key={iso}
-                  iso={iso}
-                  label={label}
+            <div className="space-y-3">
+              {sortedOverrideDates.map((dateStr) => (
+                <DateOverrideRow
+                  key={dateStr}
+                  dateStr={dateStr}
+                  slots={dateOverrides[dateStr]}
                   allSlots={allSlots}
-                  globalSlots={enabledSlots}
-                  dayOverrides={dayOverrides}
-                  onOverrideChange={handleDayOverrideChange}
-                  onReset={handleDayReset}
+                  onSlotsChange={(slots) => updateDateOverrideSlots(dateStr, slots)}
+                  onRemove={() => removeDateOverride(dateStr)}
                 />
               ))}
             </div>
