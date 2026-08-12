@@ -18,6 +18,8 @@ export type BookingSettingsData = {
   bookingUnavailableUntil: string | null;
   updatedAt: string;
   allSlotDefinitions: BookingSlotDefinition[];
+  /** Per-weekday overrides. Keys are ISO weekday strings "1"–"7". null = use global for all days. */
+  dayOverrides: Record<string, string[]> | null;
 };
 
 export type UpdateBookingSettingsPayload = Partial<{
@@ -27,8 +29,9 @@ export type UpdateBookingSettingsPayload = Partial<{
   availabilityDays: number;
   minimumLeadHours: number;
   bookingUnavailableUntil: string | null;
+  /** Pass null to clear all per-day overrides. */
+  dayOverrides: Record<string, string[]> | null;
 }>;
-
 async function getAuthToken(): Promise<string> {
   const session = await auth();
   if (!session) throw new Error("Unauthorized");
