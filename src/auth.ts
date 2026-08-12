@@ -1,6 +1,9 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import { getApiUrl } from "@/lib/utils";
+
+const cookieDomain = process.env.NEXT_PUBLIC_COOKIE_DOMAIN?.trim() || undefined;
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
   providers: [
@@ -17,10 +20,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           return null;
         }
 
-        console.log("[Auth] Fetching from:", `${process.env.NEXT_PUBLIC_API_URL}/auth/login`);
+        console.log("[Auth] Fetching from:", getApiUrl("/auth/login"));
         try {
           const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+            getApiUrl("/auth/login"),
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -63,7 +66,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
       async profile(profile) {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/oauth`,
+          getApiUrl("/auth/oauth"),
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -153,9 +156,10 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
-        domain:
-          process.env.NEXT_PUBLIC_COOKIE_DOMAIN ||
-          (process.env.NODE_ENV === "production" ? ".skarion.com" : "localhost"),
+        // Omit domain by default so the cookie is scoped to the actual frontend
+        // host (including Render/Vercel preview domains). Set it explicitly only
+        // when sessions must be shared by multiple skarion.com subdomains.
+        ...(cookieDomain ? { domain: cookieDomain } : {}),
       },
     },
   },
