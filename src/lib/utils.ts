@@ -6,6 +6,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function getApiUrl(path: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+  const configuredUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  if (process.env.NODE_ENV === "production" && !configuredUrl) {
+    throw new Error("NEXT_PUBLIC_API_URL is not configured");
+  }
+
+  const baseUrl = (configuredUrl || "http://localhost:5001").replace(/\/$/, "");
   return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 }

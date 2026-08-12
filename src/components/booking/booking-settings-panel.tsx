@@ -14,6 +14,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { signOut } from "next-auth/react";
 import {
   Card,
   CardContent,
@@ -162,12 +163,19 @@ export function BookingSettingsPanel() {
 
   // New override form
   const [newDate, setNewDate] = useState("");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const loadSettings = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getBookingSettings();
+      const result = await getBookingSettings();
+      if (!result.ok) {
+        setError(result.error);
+        toast.error(result.error);
+        return;
+      }
+      const data = result.data;
       setSettings(data);
       setEnabledSlots(data.enabledSlots);
       setEnabledWeekdays(data.enabledWeekdays.map(Number));
@@ -180,6 +188,7 @@ export function BookingSettingsPanel() {
           ? data.bookingUnavailableUntil.slice(0, 16)
           : ""
       );
+      setHasUnsavedChanges(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to load settings";
       setError(msg);
@@ -194,12 +203,14 @@ export function BookingSettingsPanel() {
   }, [loadSettings]);
 
   const toggleSlot = (value: string) => {
+    setHasUnsavedChanges(true);
     setEnabledSlots((prev) =>
       prev.includes(value) ? prev.filter((s) => s !== value) : [...prev, value]
     );
   };
 
   const toggleWeekday = (iso: number) => {
+    setHasUnsavedChanges(true);
     setEnabledWeekdays((prev) =>
       prev.includes(iso) ? prev.filter((d) => d !== iso) : [...prev, iso]
     );
@@ -220,14 +231,17 @@ export function BookingSettingsPanel() {
       ...prev,
       [newDate]: [...enabledSlots],
     }));
+    setHasUnsavedChanges(true);
     setNewDate("");
   };
 
   const updateDateOverrideSlots = (dateStr: string, slots: string[]) => {
+    setHasUnsavedChanges(true);
     setDateOverrides((prev) => ({ ...prev, [dateStr]: slots }));
   };
 
   const removeDateOverride = (dateStr: string) => {
+    setHasUnsavedChanges(true);
     setDateOverrides((prev) => {
       const next = { ...prev };
       delete next[dateStr];
@@ -258,8 +272,15 @@ export function BookingSettingsPanel() {
             ? new Date(blockUntil).toISOString()
             : null,
         };
-        const updated = await updateBookingSettings(payload);
+        const result = await updateBookingSettings(payload);
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+        const updated = result.data;
         setSettings(updated);
+        setDateOverrides(updated.dateOverrides ?? {});
+        setHasUnsavedChanges(false);
         toast.success("Booking settings saved successfully.");
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to save settings";
@@ -280,6 +301,9 @@ export function BookingSettingsPanel() {
   }
 
   if (error) {
+    const sessionExpired =
+      error.includes("session has expired") || error.includes("sign in again");
+
     return (
       <Card className="border border-red-200 bg-red-50/30 shadow-sm">
         <CardContent className="flex items-center gap-3 py-8">
@@ -288,9 +312,21 @@ export function BookingSettingsPanel() {
             <p className="font-medium text-red-700 text-sm">Failed to load settings</p>
             <p className="text-xs text-red-500 mt-0.5">{error}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={loadSettings} className="ml-auto">
-            Retry
-          </Button>
+          <div className="ml-auto flex gap-2">
+            {!sessionExpired && (
+              <Button variant="outline" size="sm" onClick={loadSettings}>
+                Retry
+              </Button>
+            )}
+            {sessionExpired && (
+              <Button
+                size="sm"
+                onClick={() => signOut({ callbackUrl: "/auth" })}
+              >
+                Sign in again
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
@@ -328,7 +364,7 @@ export function BookingSettingsPanel() {
           <Button
             size="sm"
             onClick={handleSave}
-            disabled={isPending}
+            disabled={isPending || !hasUnsavedChanges}
             className="gap-1.5"
           >
             {isPending ? (
@@ -336,7 +372,11 @@ export function BookingSettingsPanel() {
             ) : (
               <Save className="h-3.5 w-3.5" />
             )}
-            {isPending ? "Saving…" : "Save changes"}
+            {isPending
+              ? "Saving…"
+              : hasUnsavedChanges
+                ? "Save changes"
+                : "Saved"}
           </Button>
         </div>
       </CardHeader>
@@ -507,7 +547,10 @@ export function BookingSettingsPanel() {
               max={240}
               step={15}
               value={durationMinutes}
-              onChange={(e) => setDurationMinutes(Number(e.target.value))}
+              onChange={(e) => {
+                setDurationMinutes(Number(e.target.value));
+                setHasUnsavedChanges(true);
+              }}
               className="h-9 text-sm"
             />
             <p className="text-xs text-muted-foreground">15–240 min</p>
@@ -523,7 +566,10 @@ export function BookingSettingsPanel() {
               min={1}
               max={365}
               value={availabilityDays}
-              onChange={(e) => setAvailabilityDays(Number(e.target.value))}
+              onChange={(e) => {
+                setAvailabilityDays(Number(e.target.value));
+                setHasUnsavedChanges(true);
+              }}
               className="h-9 text-sm"
             />
             <p className="text-xs text-muted-foreground">Days ahead to show</p>
@@ -539,7 +585,10 @@ export function BookingSettingsPanel() {
               min={0}
               max={168}
               value={minimumLeadHours}
-              onChange={(e) => setMinimumLeadHours(Number(e.target.value))}
+              onChange={(e) => {
+                setMinimumLeadHours(Number(e.target.value));
+                setHasUnsavedChanges(true);
+              }}
               className="h-9 text-sm"
             />
             <p className="text-xs text-muted-foreground">Hours before slot is visible</p>
@@ -558,14 +607,20 @@ export function BookingSettingsPanel() {
               id="bs-block-until"
               type="datetime-local"
               value={blockUntil}
-              onChange={(e) => setBlockUntil(e.target.value)}
+              onChange={(e) => {
+                setBlockUntil(e.target.value);
+                setHasUnsavedChanges(true);
+              }}
               className="h-9 text-sm"
             />
             <p className="text-xs text-muted-foreground">
               No slots are shown before this date/time (UTC).{" "}
               <button
                 type="button"
-                onClick={() => setBlockUntil("")}
+                onClick={() => {
+                  setBlockUntil("");
+                  setHasUnsavedChanges(true);
+                }}
                 className="text-primary underline underline-offset-2 hover:no-underline"
               >
                 Clear

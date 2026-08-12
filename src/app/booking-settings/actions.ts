@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { getApiUrl } from "@/lib/utils";
 
 export type BookingSlotDefinition = {
   value: string;
@@ -32,54 +33,77 @@ export type UpdateBookingSettingsPayload = Partial<{
   /** Pass null to clear all per-date overrides. */
   dateOverrides: Record<string, string[]> | null;
 }>;
-async function getAuthToken(): Promise<string> {
+
+type BookingSettingsResult =
+  | { ok: true; data: BookingSettingsData }
+  | { ok: false; error: string };
+
+async function getAuthToken(): Promise<string | null> {
   const session = await auth();
-  if (!session) throw new Error("Unauthorized");
-  return (session as any).accessToken as string;
+  const authenticatedSession = session as (typeof session & {
+    accessToken?: string;
+  });
+  return authenticatedSession?.accessToken ?? null;
 }
 
-export async function getBookingSettings(): Promise<BookingSettingsData> {
+function errorForStatus(status: number, operation: "load" | "update") {
+  if (status === 401) return "Your session has expired. Please sign in again.";
+  if (status === 403) return "You do not have permission to manage booking settings.";
+  return `Unable to ${operation} booking settings. Please try again shortly.`;
+}
+
+export async function getBookingSettings(): Promise<BookingSettingsResult> {
   const token = await getAuthToken();
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/bookings/admin/settings`,
-    {
+  if (!token) return { ok: false, error: "Please sign in again." };
+
+  try {
+    const res = await fetch(getApiUrl("/bookings/admin/settings"), {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
+    });
+
+    if (!res.ok) {
+      console.error("[Booking settings] Load failed", { status: res.status });
+      return { ok: false, error: errorForStatus(res.status, "load") };
     }
-  );
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      (err as any).message || "Failed to fetch booking settings"
-    );
+    return { ok: true, data: await res.json() };
+  } catch (error) {
+    console.error("[Booking settings] Load request failed", error);
+    return {
+      ok: false,
+      error: "The booking service is temporarily unavailable. Please try again.",
+    };
   }
-
-  return res.json();
 }
 
 export async function updateBookingSettings(
   payload: UpdateBookingSettingsPayload
-): Promise<BookingSettingsData> {
+): Promise<BookingSettingsResult> {
   const token = await getAuthToken();
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/bookings/admin/settings`,
-    {
+  if (!token) return { ok: false, error: "Please sign in again." };
+
+  try {
+    const res = await fetch(getApiUrl("/bookings/admin/settings"), {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      console.error("[Booking settings] Update failed", { status: res.status });
+      return { ok: false, error: errorForStatus(res.status, "update") };
     }
-  );
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(
-      (err as any).message || "Failed to update booking settings"
-    );
+    return { ok: true, data: await res.json() };
+  } catch (error) {
+    console.error("[Booking settings] Update request failed", error);
+    return {
+      ok: false,
+      error: "The booking service is temporarily unavailable. Please try again.",
+    };
   }
-
-  return res.json();
 }
