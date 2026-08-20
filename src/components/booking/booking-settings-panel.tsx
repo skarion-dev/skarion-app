@@ -49,13 +49,16 @@ const WEEKDAY_LABELS: { iso: number; label: string; short: string }[] = [
   { iso: 7, label: "Sunday", short: "Sun" },
 ];
 
-const US_TIMEZONES = [
+const AVAILABLE_TIMEZONES = [
+  { value: "Asia/Dhaka", label: "Bangladesh Time (UTC+6)" },
   { value: "America/New_York", label: "Eastern Time (US & Canada)" },
   { value: "America/Chicago", label: "Central Time (US & Canada)" },
   { value: "America/Denver", label: "Mountain Time (US & Canada)" },
   { value: "America/Los_Angeles", label: "Pacific Time (US & Canada)" },
   { value: "America/Anchorage", label: "Alaska Time (US & Canada)" },
   { value: "Pacific/Honolulu", label: "Hawaii Time (US & Canada)" },
+  { value: "Europe/London", label: "Greenwich Mean Time (UTC+0)" },
+  { value: "Europe/Paris", label: "Central European Time (UTC+1)" },
 ];
 
 /** Format a YYYY-MM-DD string to a readable label, e.g. "Aug 20, 2026 (Wed)" */
@@ -564,7 +567,7 @@ export function BookingSettingsPanel() {
                 <SelectValue placeholder="Select timezone" />
               </SelectTrigger>
               <SelectContent>
-                {US_TIMEZONES.map((tz) => (
+                {AVAILABLE_TIMEZONES.map((tz) => (
                   <SelectItem key={tz.value} value={tz.value}>
                     {tz.label}
                   </SelectItem>
