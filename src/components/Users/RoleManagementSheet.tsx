@@ -44,6 +44,7 @@ const ROLE_COLORS: Record<string, string> = {
   affiliate_user:   "bg-amber-100 text-amber-700",
   candidate:        "bg-violet-100 text-violet-700",
   customer_support: "bg-sky-100 text-sky-700",
+  booking_manager:  "bg-emerald-100 text-emerald-700",
   user:             "bg-slate-100 text-slate-600",
 };
 
@@ -52,6 +53,7 @@ const ROLE_LABELS: Record<string, string> = {
   affiliate_user:   "Affiliate",
   candidate:        "Candidate",
   customer_support: "Customer Support",
+  booking_manager:  "Booking Manager",
   user:             "User",
 };
 
@@ -63,7 +65,7 @@ export function RoleManagementSheet({
   onSuccess,
 }: RoleManagementSheetProps) {
   const [referralCode, setReferralCode] = useState(user?.username || "");
-  const [loading, setLoading] = useState<"affiliate" | "candidate" | "support" | null>(null);
+  const [loading, setLoading] = useState<"affiliate" | "candidate" | "support" | "booking" | null>(null);
 
   const hasRole = (name: string) => user.roles?.some((r) => r.name === name);
 
@@ -124,11 +126,25 @@ export function RoleManagementSheet({
     }
   }
 
+  async function handleBookingManager() {
+    setLoading("booking");
+    try {
+      const data = await callApi(`/users/${user.id}/assign-booking-manager`, "POST");
+      toast.success(`${user.name} can now manage booking settings.`);
+      onSuccess(data.user);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Something went wrong");
+    } finally {
+      setLoading(null);
+    }
+  }
+
   if (!user) return null;
 
   const isAffiliate = hasRole("affiliate_user");
   const isCandidate = hasRole("candidate");
   const isSupport = hasRole("customer_support");
+  const isBookingManager = hasRole("booking_manager");
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -240,6 +256,32 @@ export function RoleManagementSheet({
               </Button>
             ) : (
               <p className="text-xs text-muted-foreground">Already on support team.</p>
+            )}
+          </div>
+
+          {/* Booking Manager */}
+          <div className="rounded-lg border p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">Booking Manager</p>
+              {isBookingManager && (
+                <span className="text-xs text-emerald-600 font-medium">Assigned</span>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Can change the time slots shown on skarion.com/book.
+            </p>
+            {!isBookingManager ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 w-full"
+                onClick={handleBookingManager}
+                disabled={loading !== null}
+              >
+                {loading === "booking" ? "Assigning..." : "Assign Booking Manager"}
+              </Button>
+            ) : (
+              <p className="text-xs text-muted-foreground">Already a booking manager.</p>
             )}
           </div>
         </div>

@@ -39,8 +39,13 @@ export default async function AppRootPage() {
   const permissions: string[] = session.user?.permissions ?? [];
 
   const hasEtlAccess = permissions.includes("ACCESS_ETL_DASHBOARD");
+  const canManageBookingSettings = permissions.includes(
+    "MANAGE_BOOKING_SETTINGS"
+  );
   const isCandidateOnly =
-    permissions.includes("ACCESS_CANDIDATE_DASHBOARD") && !hasEtlAccess;
+    permissions.includes("ACCESS_CANDIDATE_DASHBOARD") &&
+    !hasEtlAccess &&
+    !canManageBookingSettings;
   const isCandidate = permissions.includes("ACCESS_CANDIDATE_DASHBOARD");
   const isCustomerSupport = permissions.includes(
     "ACCESS_CUSTOMER_SUPPORT_DASHBOARD"
@@ -138,7 +143,7 @@ export default async function AppRootPage() {
             </>
           )}
 
-          {permissions.includes("MANAGE_BOOKING_SETTINGS") && (
+          {canManageBookingSettings && (
             <div className="mb-6">
               <BookingSettingsPanel />
             </div>
@@ -157,6 +162,17 @@ export default async function AppRootPage() {
               currentUserName={session.user?.name ?? "You"}
             />
           </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // ── Booking-manager-only view ───────────────────────────────────────────
+  if (canManageBookingSettings) {
+    return (
+      <AppLayout breadcrumbs={breadcrumbs} user={session.user} chatPanel={chatPanel}>
+        <div className="p-4">
+          <BookingSettingsPanel />
         </div>
       </AppLayout>
     );

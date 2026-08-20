@@ -21,6 +21,7 @@ export type BookingSettingsData = {
   allSlotDefinitions: BookingSlotDefinition[];
   /** Per-date overrides. Keys are "YYYY-MM-DD" date strings. null = use global for all dates. */
   dateOverrides: Record<string, string[]> | null;
+  timezone: string;
 };
 
 export type UpdateBookingSettingsPayload = Partial<{
@@ -32,6 +33,7 @@ export type UpdateBookingSettingsPayload = Partial<{
   bookingUnavailableUntil: string | null;
   /** Pass null to clear all per-date overrides. */
   dateOverrides: Record<string, string[]> | null;
+  timezone: string;
 }>;
 
 type BookingSettingsResult =
