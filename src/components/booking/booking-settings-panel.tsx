@@ -27,6 +27,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   getBookingSettings,
   updateBookingSettings,
   type BookingSettingsData,
@@ -40,6 +47,15 @@ const WEEKDAY_LABELS: { iso: number; label: string; short: string }[] = [
   { iso: 5, label: "Friday", short: "Fri" },
   { iso: 6, label: "Saturday", short: "Sat" },
   { iso: 7, label: "Sunday", short: "Sun" },
+];
+
+const US_TIMEZONES = [
+  { value: "America/New_York", label: "Eastern Time (US & Canada)" },
+  { value: "America/Chicago", label: "Central Time (US & Canada)" },
+  { value: "America/Denver", label: "Mountain Time (US & Canada)" },
+  { value: "America/Los_Angeles", label: "Pacific Time (US & Canada)" },
+  { value: "America/Anchorage", label: "Alaska Time (US & Canada)" },
+  { value: "Pacific/Honolulu", label: "Hawaii Time (US & Canada)" },
 ];
 
 /** Format a YYYY-MM-DD string to a readable label, e.g. "Aug 20, 2026 (Wed)" */
@@ -159,7 +175,8 @@ export function BookingSettingsPanel() {
   const [durationMinutes, setDurationMinutes] = useState(30);
   const [availabilityDays, setAvailabilityDays] = useState(30);
   const [minimumLeadHours, setMinimumLeadHours] = useState(2);
-  const [blockUntil, setBlockUntil] = useState<string>("");
+  const [timezone, setTimezone] = useState("America/New_York");
+  const [bookingUnavailableUntilStr, setBookingUnavailableUntilStr] = useState<string>("");
 
   // New override form
   const [newDate, setNewDate] = useState("");
@@ -183,7 +200,8 @@ export function BookingSettingsPanel() {
       setDurationMinutes(data.durationMinutes);
       setAvailabilityDays(data.availabilityDays);
       setMinimumLeadHours(data.minimumLeadHours);
-      setBlockUntil(
+      setTimezone(data.timezone || "America/New_York");
+      setBookingUnavailableUntilStr(
         data.bookingUnavailableUntil
           ? data.bookingUnavailableUntil.slice(0, 16)
           : ""
@@ -268,8 +286,9 @@ export function BookingSettingsPanel() {
           durationMinutes,
           availabilityDays,
           minimumLeadHours,
-          bookingUnavailableUntil: blockUntil
-            ? new Date(blockUntil).toISOString()
+          timezone,
+          bookingUnavailableUntil: bookingUnavailableUntilStr
+            ? new Date(bookingUnavailableUntilStr).toISOString()
             : null,
         };
         const result = await updateBookingSettings(payload);
@@ -535,7 +554,25 @@ export function BookingSettingsPanel() {
         <Separator />
 
         {/* ── Numeric Controls ───────────────────────────────────────── */}
-        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="bs-timezone" className="text-xs font-medium">
+              Timezone
+            </Label>
+            <Select value={timezone} onValueChange={setTimezone}>
+              <SelectTrigger id="bs-timezone" className="bg-white">
+                <SelectValue placeholder="Select timezone" />
+              </SelectTrigger>
+              <SelectContent>
+                {US_TIMEZONES.map((tz) => (
+                  <SelectItem key={tz.value} value={tz.value}>
+                    {tz.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
           <div className="space-y-1.5">
             <Label htmlFor="bs-duration" className="text-xs font-medium">
               Slot Duration (minutes)
@@ -606,9 +643,9 @@ export function BookingSettingsPanel() {
             <Input
               id="bs-block-until"
               type="datetime-local"
-              value={blockUntil}
+              value={bookingUnavailableUntilStr}
               onChange={(e) => {
-                setBlockUntil(e.target.value);
+                setBookingUnavailableUntilStr(e.target.value);
                 setHasUnsavedChanges(true);
               }}
               className="h-9 text-sm"
@@ -618,7 +655,7 @@ export function BookingSettingsPanel() {
               <button
                 type="button"
                 onClick={() => {
-                  setBlockUntil("");
+                  setBookingUnavailableUntilStr("");
                   setHasUnsavedChanges(true);
                 }}
                 className="text-primary underline underline-offset-2 hover:no-underline"
