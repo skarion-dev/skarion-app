@@ -27,6 +27,8 @@ import { JobsList } from "@/components/JobsList";
 import { ScheduleTable } from "@/components/schedules/schedule-table";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { BookingSettingsPanel } from "@/components/booking/booking-settings-panel";
+import { BookingDashboard } from "@/components/booking/booking-dashboard";
+import { getAdminBookings } from "@/app/bookings/actions";
 import { Lock } from "lucide-react";
 
 export default async function AppRootPage() {
@@ -40,7 +42,7 @@ export default async function AppRootPage() {
 
   const hasEtlAccess = permissions.includes("ACCESS_ETL_DASHBOARD");
   const canManageBookingSettings = permissions.includes(
-    "MANAGE_BOOKING_SETTINGS"
+    "MANAGE_BOOKING_SETTINGS",
   );
   const isCandidateOnly =
     permissions.includes("ACCESS_CANDIDATE_DASHBOARD") &&
@@ -48,7 +50,7 @@ export default async function AppRootPage() {
     !canManageBookingSettings;
   const isCandidate = permissions.includes("ACCESS_CANDIDATE_DASHBOARD");
   const isCustomerSupport = permissions.includes(
-    "ACCESS_CUSTOMER_SUPPORT_DASHBOARD"
+    "ACCESS_CUSTOMER_SUPPORT_DASHBOARD",
   );
 
   const showChat = isCandidate || isCustomerSupport;
@@ -84,7 +86,11 @@ export default async function AppRootPage() {
     ]);
 
     return (
-      <AppLayout breadcrumbs={breadcrumbs} user={session.user} chatPanel={chatPanel}>
+      <AppLayout
+        breadcrumbs={breadcrumbs}
+        user={session.user}
+        chatPanel={chatPanel}
+      >
         <div className="p-4">
           <CandidateDashboard
             initialApplications={myApplications}
@@ -99,17 +105,30 @@ export default async function AppRootPage() {
 
   // ── Full ETL dashboard view ───────────────────────────────────────────────
   if (hasEtlAccess) {
-    const [candidates, applications, stats, jobs, crawlerStatus] =
-      await Promise.all([
-        getCandidates(),
-        getJobApplications(),
-        getEtlStats(),
-        getJobs(),
-        getCrawlerStatus(),
-      ]);
+    const [
+      candidates,
+      applications,
+      stats,
+      jobs,
+      crawlerStatus,
+      adminBookings,
+    ] = await Promise.all([
+      getCandidates(),
+      getJobApplications(),
+      getEtlStats(),
+      getJobs(),
+      getCrawlerStatus(),
+      canManageBookingSettings
+        ? getAdminBookings()
+        : Promise.resolve({ ok: false as const, error: "" }),
+    ]);
 
     return (
-      <AppLayout breadcrumbs={breadcrumbs} user={session.user} chatPanel={chatPanel}>
+      <AppLayout
+        breadcrumbs={breadcrumbs}
+        user={session.user}
+        chatPanel={chatPanel}
+      >
         <div>
           <div className="flex justify-end items-center mb-6">
             {permissions.includes("MANAGE_COURSE") && (
@@ -145,6 +164,11 @@ export default async function AppRootPage() {
 
           {canManageBookingSettings && (
             <div className="mb-6">
+              {adminBookings.ok && (
+                <div className="mb-6">
+                  <BookingDashboard initialData={adminBookings.data} />
+                </div>
+              )}
               <BookingSettingsPanel />
             </div>
           )}
@@ -169,9 +193,17 @@ export default async function AppRootPage() {
 
   // ── Booking-manager-only view ───────────────────────────────────────────
   if (canManageBookingSettings) {
+    const adminBookings = await getAdminBookings();
     return (
-      <AppLayout breadcrumbs={breadcrumbs} user={session.user} chatPanel={chatPanel}>
+      <AppLayout
+        breadcrumbs={breadcrumbs}
+        user={session.user}
+        chatPanel={chatPanel}
+      >
         <div className="p-4">
+          {adminBookings.ok && (
+            <BookingDashboard initialData={adminBookings.data} />
+          )}
           <BookingSettingsPanel />
         </div>
       </AppLayout>
@@ -180,7 +212,11 @@ export default async function AppRootPage() {
 
   // ── No relevant permissions ───────────────────────────────────────────────
   return (
-    <AppLayout breadcrumbs={breadcrumbs} user={session.user} chatPanel={chatPanel}>
+    <AppLayout
+      breadcrumbs={breadcrumbs}
+      user={session.user}
+      chatPanel={chatPanel}
+    >
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center max-w-sm">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
