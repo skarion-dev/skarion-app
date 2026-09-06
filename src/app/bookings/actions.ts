@@ -10,6 +10,7 @@ export type AdminBooking = {
   phone: string;
   address?: string;
   note?: string;
+  meetingSummary?: string | null;
   slotDate: string;
   slotValue: string;
   slotLabel: string;
@@ -17,6 +18,7 @@ export type AdminBooking = {
   slotEndAt: string;
   timezone: string;
   meetingJoinUrl?: string;
+  resumeUrl?: string | null;
   reminderScheduled: boolean;
   createdAt: string;
   status: string;
@@ -93,4 +95,16 @@ export async function rescheduleBooking(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+}
+
+export async function updateMeetingSummary(id: string, meetingSummary: string) {
+  return request(`/bookings/admin/${id}/summary`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ meetingSummary }),
+  });
+}
+
+export async function deleteMeetingSummary(id: string) {
+  return request(`/bookings/admin/${id}/summary`, { method: "DELETE" });
 }

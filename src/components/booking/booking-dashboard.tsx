@@ -5,6 +5,9 @@ import {
   CalendarClock,
   CheckCircle2,
   Clock3,
+  FileText,
+  Pencil,
+  Save,
   Search,
   Users,
   XCircle,
@@ -16,9 +19,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   cancelBooking,
+  deleteMeetingSummary,
   getAdminBookings,
   getBookingAvailability,
   rescheduleBooking,
+  updateMeetingSummary,
   type AdminBooking,
   type AdminBookingsData,
 } from "@/app/bookings/actions";
@@ -47,6 +52,8 @@ export function BookingDashboard({
     { value: string; label: string }[]
   >([]);
   const [busy, setBusy] = useState(false);
+  const [editingSummaryId, setEditingSummaryId] = useState<string | null>(null);
+  const [summaryDraft, setSummaryDraft] = useState("");
 
   const bookings = useMemo(
     () =>
@@ -103,6 +110,34 @@ export function BookingDashboard({
     }
   }
 
+  function beginSummaryEdit(booking: AdminBooking) {
+    setEditingSummaryId(booking.id);
+    setSummaryDraft(booking.meetingSummary ?? "");
+  }
+
+  async function saveSummary(id: string) {
+    setBusy(true);
+    const result = await updateMeetingSummary(id, summaryDraft);
+    setBusy(false);
+    if (!result.ok) toast.error(result.error);
+    else {
+      toast.success("Meeting summary saved.");
+      setEditingSummaryId(null);
+      await refresh();
+    }
+  }
+
+  async function removeSummary(id: string) {
+    setBusy(true);
+    const result = await deleteMeetingSummary(id);
+    setBusy(false);
+    if (!result.ok) toast.error(result.error);
+    else {
+      toast.success("Meeting summary deleted.");
+      await refresh();
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
@@ -155,8 +190,10 @@ export function BookingDashboard({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-y bg-muted/40 text-left text-muted-foreground">
-                  <th className="px-5 py-3 font-medium">Client</th>
-                  <th className="px-5 py-3 font-medium">Consultation time</th>
+                  <th className="px-5 py-3 font-medium">Date</th>
+                  <th className="px-5 py-3 font-medium">Name</th>
+                  <th className="px-5 py-3 font-medium">Meeting summary</th>
+                  <th className="px-5 py-3 font-medium">Resume</th>
                   <th className="px-5 py-3 font-medium">Status</th>
                   <th className="px-5 py-3 text-right font-medium">Actions</th>
                 </tr>
@@ -164,12 +201,6 @@ export function BookingDashboard({
               <tbody>
                 {bookings.map((booking) => (
                   <tr key={booking.id} className="border-b last:border-0">
-                    <td className="px-5 py-4">
-                      <div className="font-medium">{booking.fullName}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {booking.email} · {booking.phone}
-                      </div>
-                    </td>
                     <td className="px-5 py-4">
                       <div>
                         {new Date(booking.slotStartAt).toLocaleString([], {
@@ -180,6 +211,89 @@ export function BookingDashboard({
                       <div className="text-xs text-muted-foreground">
                         {booking.timezone}
                       </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="font-medium">{booking.fullName}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {booking.email} · {booking.phone}
+                      </div>
+                    </td>
+                    <td className="min-w-[280px] px-5 py-4 align-top">
+                      {editingSummaryId === booking.id ? (
+                        <div className="space-y-2">
+                          <textarea
+                            value={summaryDraft}
+                            onChange={(event) =>
+                              setSummaryDraft(event.target.value)
+                            }
+                            maxLength={5000}
+                            rows={4}
+                            className="w-full resize-y rounded-md border bg-background p-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                            placeholder="Add notes about this consultation..."
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              disabled={busy}
+                              onClick={() => saveSummary(booking.id)}
+                            >
+                              <Save className="mr-1 h-3.5 w-3.5" /> Save
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditingSummaryId(null)}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="whitespace-pre-wrap text-sm text-muted-foreground">
+                            {booking.meetingSummary || "No summary added yet."}
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => beginSummaryEdit(booking)}
+                            >
+                              <Pencil className="mr-1 h-3.5 w-3.5" />{" "}
+                              {booking.meetingSummary ? "Edit" : "Add summary"}
+                            </Button>
+                            {booking.meetingSummary && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-destructive"
+                                disabled={busy}
+                                onClick={() => removeSummary(booking.id)}
+                              >
+                                Delete
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-5 py-4">
+                      {booking.resumeUrl ? (
+                        <Button size="sm" variant="outline" asChild>
+                          <a
+                            href={booking.resumeUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <FileText className="mr-1 h-3.5 w-3.5" /> Open
+                            resume
+                          </a>
+                        </Button>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          Not available
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-4">
                       <Badge
@@ -237,7 +351,7 @@ export function BookingDashboard({
                 {!bookings.length && (
                   <tr>
                     <td
-                      colSpan={4}
+                      colSpan={6}
                       className="px-5 py-12 text-center text-muted-foreground"
                     >
                       No bookings match your filters.
