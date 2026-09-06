@@ -13,7 +13,6 @@ import {
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,6 +23,8 @@ import {
   getBookingAvailability,
   rescheduleBooking,
   updateMeetingSummary,
+  updateBookingStatus,
+  type BookingStatus,
   type AdminBooking,
   type AdminBookingsData,
 } from "@/app/bookings/actions";
@@ -42,9 +43,7 @@ export function BookingDashboard({
 }) {
   const [data, setData] = useState(initialData);
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<"all" | "scheduled" | "cancelled">(
-    "all",
-  );
+  const [filter, setFilter] = useState<"all" | BookingStatus>("all");
   const [selected, setSelected] = useState<AdminBooking | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleSlot, setRescheduleSlot] = useState("");
@@ -138,6 +137,17 @@ export function BookingDashboard({
     }
   }
 
+  async function changeStatus(id: string, status: BookingStatus) {
+    setBusy(true);
+    const result = await updateBookingStatus(id, status);
+    setBusy(false);
+    if (!result.ok) toast.error(result.error);
+    else {
+      toast.success("Booking status updated.");
+      await refresh();
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
@@ -179,6 +189,9 @@ export function BookingDashboard({
                 className="h-10 rounded-md border bg-background px-3 text-sm"
               >
                 <option value="all">All statuses</option>
+                <option value="ghosted">Ghosted</option>
+                <option value="followup">Follow-up</option>
+                <option value="converted">Converted</option>
                 <option value="scheduled">Scheduled</option>
                 <option value="cancelled">Cancelled</option>
               </select>
@@ -296,15 +309,24 @@ export function BookingDashboard({
                       )}
                     </td>
                     <td className="px-5 py-4">
-                      <Badge
-                        variant={
-                          booking.status === "scheduled"
-                            ? "default"
-                            : "secondary"
+                      <select
+                        value={booking.status}
+                        disabled={busy}
+                        onChange={(event) =>
+                          changeStatus(
+                            booking.id,
+                            event.target.value as BookingStatus,
+                          )
                         }
+                        className="h-9 rounded-md border bg-background px-2 text-sm capitalize"
+                        aria-label={`Status for ${booking.fullName}`}
                       >
-                        {booking.status}
-                      </Badge>
+                        <option value="ghosted">Ghosted</option>
+                        <option value="followup">Follow-up</option>
+                        <option value="converted">Converted</option>
+                        <option value="scheduled">Scheduled</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
                     </td>
                     <td className="px-5 py-4 text-right">
                       <div className="flex justify-end gap-2">

@@ -21,8 +21,14 @@ export type AdminBooking = {
   resumeUrl?: string | null;
   reminderScheduled: boolean;
   createdAt: string;
-  status: string;
+  status: BookingStatus;
 };
+export type BookingStatus =
+  | "ghosted"
+  | "followup"
+  | "converted"
+  | "scheduled"
+  | "cancelled";
 export type BookingStats = {
   total: number;
   scheduled: number;
@@ -118,4 +124,12 @@ export async function updateMeetingSummary(id: string, meetingSummary: string) {
 
 export async function deleteMeetingSummary(id: string) {
   return request(`/bookings/admin/${id}/summary`, { method: "DELETE" });
+}
+
+export async function updateBookingStatus(id: string, status: BookingStatus) {
+  return request(`/bookings/admin/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
 }
