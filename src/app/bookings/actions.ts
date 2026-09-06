@@ -50,14 +50,25 @@ async function request(path: string, init?: RequestInit) {
       headers: { Authorization: `Bearer ${token}`, ...(init?.headers ?? {}) },
       cache: "no-store",
     });
-    if (!response.ok)
+    if (!response.ok) {
+      let detail = "Booking service request failed.";
+      try {
+        const body = (await response.json()) as { message?: string | string[] };
+        if (body.message)
+          detail = Array.isArray(body.message)
+            ? body.message.join(" ")
+            : body.message;
+      } catch {
+        // Keep the status-based fallback when the API does not return JSON.
+      }
       return {
         ok: false as const,
         error:
           response.status === 403
             ? "You do not have permission to manage bookings."
-            : "Booking service request failed.",
+            : detail,
       };
+    }
     return { ok: true as const, data: await response.json() };
   } catch {
     return {
